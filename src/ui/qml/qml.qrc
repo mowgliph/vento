@@ -1,0 +1,21 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+    <qresource prefix="/">
+        <file>Main.qml</file>
+        <file>theme/Theme.qml</file>
+        <file>components/Sidebar.qml</file>
+        <file>components/AppHeader.qml</file>
+        <file>components/StatCard.qml</file>
+        <file>components/ProductCard.qml</file>
+        <file>components/SearchBar.qml</file>
+        <file>components/Toast.qml</file>
+        <file>views/DashboardView.qml</file>
+        <file>views/SalesView.qml</file>
+        <file>views/InventoryView.qml</file>
+        <file>views/SettingsView.qml</file>
+        <file>ReportsView.qml</file>
+    </qresource>
+    <qresource prefix="/icons">
+        <!-- Agregar iconos SVG aquí -->
+    </qresource>
+</RCC>

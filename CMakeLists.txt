@@ -4,6 +4,38 @@
 #===============================================================================
 cmake_minimum_required(VERSION 3.21)
 
+# Fix for VS Build Tools missing RC and MT tools
+if(WIN32)
+    # Disable manifest generation if RC/MT tools are not available
+    set(CMAKE_DISABLE_FIND_PACKAGE_rc TRUE)
+    set(CMAKE_DISABLE_FIND_PACKAGE_mt TRUE)
+
+    # Try to find Windows SDK
+    find_program(CMAKE_RC_COMPILER
+        NAMES rc
+        PATHS
+            "C:/Program Files (x86)/Windows Kits/10/bin/*/x64"
+            "C:/Program Files (x86)/Windows Kits/10/bin/*/x86"
+        DOC "Windows Resource Compiler"
+    )
+
+    find_program(CMAKE_MT_COMPILER
+        NAMES mt
+        PATHS
+            "C:/Program Files (x86)/Windows Kits/10/bin/*/x64"
+            "C:/Program Files (x86)/Windows Kits/10/bin/*/x86"
+        DOC "Windows Manifest Tool"
+    )
+
+    # If tools are not found, disable manifest generation
+    if(NOT CMAKE_RC_COMPILER OR NOT CMAKE_MT_COMPILER)
+        message(STATUS "Windows SDK tools not found. Disabling manifest generation.")
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /MANIFEST:NO")
+        set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} /MANIFEST:NO")
+        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /MANIFEST:NO")
+    endif()
+endif()
+
 project(Vento
     VERSION 1.0.0
     DESCRIPTION "Sistema de gestión de inventario y ventas"

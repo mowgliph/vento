@@ -9,6 +9,7 @@ import QtQuick.Controls.Material
 import QtQuick.Layouts
 import QtQuick.Dialogs
 import Vento.Reporting 1.0
+import Vento.Currency 1.0
 
 Item {
     id: reportsView
@@ -226,6 +227,83 @@ Item {
         }
         
         //------------------------------------------------------------------
+        // Reporte Diario Rápido
+        //------------------------------------------------------------------
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 120
+            color: appColors.surface
+            radius: 12
+            border.color: "#E0E0E0"
+            border.width: 1
+            
+            RowLayout {
+                anchors.fill: parent
+                anchors.margins: 16
+                spacing: 16
+                
+                Column {
+                    spacing: 4
+                    
+                    Text {
+                        text: "📊 Reporte Diario"
+                        font.pixelSize: 16
+                        font.weight: Font.Bold
+                        color: appColors.text
+                    }
+                    
+                    Text {
+                        text: "Genera reporte del día actual para reemplazar tu proceso de Excel"
+                        font.pixelSize: 12
+                        color: appColors.textSecondary
+                    }
+                }
+                
+                Item { Layout.fillWidth: true }
+                
+                Button {
+                    text: "📋 Generar Reporte de Hoy"
+                    
+                    background: Rectangle {
+                        color: parent.hovered ? "#107C10" : "#107C10"
+                        radius: 8
+                    }
+                    
+                    contentItem: Text {
+                        text: parent.text
+                        color: "white"
+                        font.pixelSize: 14
+                        font.weight: Font.Medium
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                    
+                    onClicked: generateDailyReport()
+                }
+                
+                Button {
+                    text: "📅 Elegir Fecha"
+                    
+                    background: Rectangle {
+                        color: parent.hovered ? appColors.primaryDark : appColors.primary
+                        radius: 8
+                    }
+                    
+                    contentItem: Text {
+                        text: parent.text
+                        color: "white"
+                        font.pixelSize: 14
+                        font.weight: Font.Medium
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                    
+                    onClicked: dateDialog.open()
+                }
+            }
+        }
+        
+        //------------------------------------------------------------------
         // Panel de resumen
         //------------------------------------------------------------------
         Rectangle {
@@ -389,5 +467,380 @@ Item {
             startDateField.text,
             endDateField.text
         )
+    }
+    
+    //----------------------------------------------------------------------
+    // Funciones de reporte diario
+    //----------------------------------------------------------------------
+    function generateDailyReport() {
+        var today = new Date()
+        var dateStr = today.getFullYear() + "-" + 
+                     String(today.getMonth() + 1).padStart(2, '0') + "-" + 
+                     String(today.getDate()).padStart(2, '0')
+        
+        var dailyReport = reportingService.getDailySalesReport(dateStr)
+        
+        if (dailyReport && Object.keys(dailyReport).length > 0) {
+            // Show daily report dialog
+            dailyReportDialog.reportData = dailyReport
+            dailyReportDialog.open()
+        } else {
+            errorDialog.text = "No hay datos de ventas para hoy"
+            errorDialog.open()
+        }
+    }
+    
+    function generateDailyReportForDate(date) {
+        var dateStr = date.getFullYear() + "-" + 
+                     String(date.getMonth() + 1).padStart(2, '0') + "-" + 
+                     String(date.getDate()).padStart(2, '0')
+        
+        var dailyReport = reportingService.getDailySalesReport(dateStr)
+        
+        if (dailyReport && Object.keys(dailyReport).length > 0) {
+            dailyReportDialog.reportData = dailyReport
+            dailyReportDialog.open()
+        } else {
+            errorDialog.text = "No hay datos de ventas para la fecha seleccionada"
+            errorDialog.open()
+        }
+    }
+    
+    function exportDailyReport(format) {
+        if (!dailyReportDialog.reportData || !dailyReportDialog.reportData.sales) {
+            errorDialog.text = "No hay datos para exportar"
+            errorDialog.open()
+            return
+        }
+        
+        var date = dailyReportDialog.reportData.date || "hoy"
+        var fileName = "reporte_diario_" + date.replace(/\//g, "-")
+        
+        if (format === "excel") {
+            reportingService.exportToExcel(dailyReportDialog.reportData.sales, fileName + ".csv")
+        } else if (format === "pdf") {
+            reportingService.exportToPDF(dailyReportDialog.reportData.sales, fileName + ".pdf")
+        } else if (format === "print") {
+            reportingService.printReport(dailyReportDialog.reportData.sales)
+        }
+    }
+    
+    //----------------------------------------------------------------------
+    // Diálogos adicionales para reportes diarios
+    //----------------------------------------------------------------------
+    Dialog {
+        id: dailyReportDialog
+        
+        title: "Reporte Diario de Ventas"
+        width: 800
+        height: 600
+        
+        property var reportData: ({})
+        
+        background: Rectangle {
+            color: appColors.surface
+            radius: 12
+            border.color: "#E0E0E0"
+            border.width: 1
+        }
+        
+        ColumnLayout {
+            anchors.fill: parent
+            spacing: 16
+            
+            Text {
+                text: "📊 " + (reportData.dateFormatted || "Reporte Diario")
+                font.pixelSize: 18
+                font.weight: Font.Bold
+                color: appColors.text
+            }
+            
+            // Resumen del día
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 100
+                color: appColors.background
+                radius: 8
+                border.color: "#E0E0E0"
+                border.width: 1
+                
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.margins: 16
+                    spacing: 16
+                    
+                    Column {
+                        spacing: 4
+                        
+                        Text {
+                            text: "Ventas Totales:"
+                            font.pixelSize: 12
+                            color: appColors.textSecondary
+                        }
+                        
+                        Text {
+                            text: (reportData.summary ? reportData.summary.totalTransactions || 0 : 0)
+                            font.pixelSize: 24
+                            font.weight: Font.Bold
+                            color: appColors.primary
+                        }
+                    }
+                    
+                    Column {
+                        spacing: 4
+                        
+                        Text {
+                            text: "Ingresos:"
+                            font.pixelSize: 12
+                            color: appColors.textSecondary
+                        }
+                        
+                        Text {
+                            text: CurrencyService.localCurrencySymbol + " " + (reportData.summary ? (reportData.summary.totalSales || 0).toFixed(2) : "0.00")
+                            font.pixelSize: 24
+                            font.weight: Font.Bold
+                            color: appColors.success
+                        }
+                    }
+                    
+                    Column {
+                        spacing: 4
+                        
+                        Text {
+                            text: "Venta Promedio:"
+                            font.pixelSize: 12
+                            color: appColors.textSecondary
+                        }
+                        
+                        Text {
+                            text: CurrencyService.localCurrencySymbol + " " + (reportData.averageSale || 0).toFixed(2)
+                            font.pixelSize: 24
+                            font.weight: Font.Bold
+                            color: appColors.warning
+                        }
+                    }
+                    
+                    Item { Layout.fillWidth: true }
+                    
+                    Column {
+                        spacing: 8
+                        
+                        Button {
+                            text: "📊 Exportar Excel"
+                            
+                            background: Rectangle {
+                                color: parent.hovered ? appColors.success : "#107C10"
+                                radius: 6
+                            }
+                            
+                            contentItem: Text {
+                                text: parent.text
+                                color: "white"
+                                font.pixelSize: 11
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
+                            }
+                            
+                            onClicked: exportDailyReport("excel")
+                        }
+                        
+                        Button {
+                            text: "🖨️ Imprimir"
+                            
+                            background: Rectangle {
+                                color: parent.hovered ? appColors.primaryDark : appColors.primary
+                                radius: 6
+                            }
+                            
+                            contentItem: Text {
+                                text: parent.text
+                                color: "white"
+                                font.pixelSize: 11
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
+                            }
+                            
+                            onClicked: exportDailyReport("print")
+                        }
+                    }
+                }
+            }
+            
+            // Productos más vendidos
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                color: appColors.surface
+                radius: 8
+                border.color: "#E0E0E0"
+                border.width: 1
+                
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: 16
+                    spacing: 12
+                    
+                    Text {
+                        text: "🏆 Productos Más Vendidos"
+                        font.pixelSize: 14
+                        font.weight: Font.Bold
+                        color: appColors.text
+                    }
+                    
+                    ScrollView {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        
+                        ListView {
+                            model: reportData.topProducts || []
+                            
+                            delegate: Rectangle {
+                                width: ListView.view.width
+                                height: 40
+                                color: index % 2 === 0 ? "transparent" : appColors.background
+                                border.color: "#F0F0F0"
+                                border.width: 1
+                                
+                                Row {
+                                    anchors.fill: parent
+                                    anchors.leftMargin: 12
+                                    anchors.rightMargin: 12
+                                    spacing: 16
+                                    
+                                    Text {
+                                        text: (index + 1) + "."
+                                        font.pixelSize: 12
+                                        font.weight: Font.Bold
+                                        color: appColors.textSecondary
+                                        anchors.verticalCenter: parent.verticalCenter
+                                    }
+                                    
+                                    Text {
+                                        Layout.fillWidth: true
+                                        text: modelData.productName || "Producto"
+                                        font.pixelSize: 12
+                                        color: appColors.text
+                                        anchors.verticalCenter: parent.verticalCenter
+                                    }
+                                    
+                                    Text {
+                                        text: modelData.quantitySold || 0
+                                        font.pixelSize: 12
+                                        font.weight: Font.Bold
+                                        color: appColors.text
+                                        anchors.verticalCenter: parent.verticalCenter
+                                    }
+                                    
+                                    Text {
+                                        text: CurrencyService.localCurrencySymbol + " " + (modelData.totalSales || 0).toFixed(2)
+                                        font.pixelSize: 12
+                                        font.weight: Font.Bold
+                                        color: appColors.primary
+                                        anchors.verticalCenter: parent.verticalCenter
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            Row {
+                Layout.alignment: Qt.AlignRight
+                
+                Button {
+                    text: "Cerrar"
+                    
+                    background: Rectangle {
+                        color: parent.hovered ? appColors.primaryDark : appColors.primary
+                        radius: 8
+                    }
+                    
+                    contentItem: Text {
+                        text: parent.text
+                        color: "white"
+                        font.pixelSize: 14
+                        font.weight: Font.Medium
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                    
+                    onClicked: dailyReportDialog.close()
+                }
+            }
+        }
+    }
+    
+    Dialog {
+        id: dateDialog
+        
+        title: "Seleccionar Fecha"
+        width: 300
+        height: 400
+        
+        background: Rectangle {
+            color: appColors.surface
+            radius: 12
+            border.color: "#E0E0E0"
+            border.width: 1
+        }
+        
+        ColumnLayout {
+            anchors.fill: parent
+            spacing: 16
+            
+            Text {
+                text: "📅 Selecciona una fecha para el reporte diario"
+                font.pixelSize: 14
+                color: appColors.text
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
+            
+            Calendar {
+                id: calendar
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+            }
+            
+            Row {
+                Layout.alignment: Qt.AlignRight
+                spacing: 12
+                
+                Button {
+                    text: "Cancelar"
+                    
+                    background: Rectangle {
+                        color: parent.hovered ? "#F0F0F0" : "transparent"
+                        radius: 8
+                    }
+                    
+                    onClicked: dateDialog.close()
+                }
+                
+                Button {
+                    text: "Generar"
+                    
+                    background: Rectangle {
+                        color: parent.hovered ? appColors.primaryDark : appColors.primary
+                        radius: 8
+                    }
+                    
+                    contentItem: Text {
+                        text: parent.text
+                        color: "white"
+                        font.pixelSize: 14
+                        font.weight: Font.Medium
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                    
+                    onClicked: {
+                        generateDailyReportForDate(calendar.selectedDate)
+                        dateDialog.close()
+                    }
+                }
+            }
+        }
     }
 }

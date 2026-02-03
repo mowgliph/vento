@@ -12,6 +12,11 @@ void InventoryService::initialize() {
 }
 
 QVariantMap InventoryService::createProduct(const QVariantMap& productData) {
+    // Guard clause - verificar que el repositorio esté inicializado
+    if (!m_repository) {
+        return {{"success", false}, {"error", "Repositorio no inicializado"}};
+    }
+    
     Product product = Product::fromVariantMap(productData);
 
     if (!product.isValid()) {
@@ -39,6 +44,11 @@ QVariantMap InventoryService::createProduct(const QVariantMap& productData) {
 }
 
 QVariantMap InventoryService::updateProduct(qint64 id, const QVariantMap& updates) {
+    // Guard clause - verificar que el repositorio esté inicializado
+    if (!m_repository) {
+        return {{"success", false}, {"error", "Repositorio no inicializado"}};
+    }
+    
     std::optional<Product> existing = m_repository->findById(id);
     if (!existing) {
         return {{"success", false}, {"error", "Producto no encontrado"}};
@@ -69,6 +79,11 @@ QVariantMap InventoryService::updateProduct(qint64 id, const QVariantMap& update
 }
 
 QVariantMap InventoryService::getProduct(qint64 id) {
+    // Guard clause - verificar que el repositorio esté inicializado
+    if (!m_repository) {
+        return {{"success", false}, {"error", "Repositorio no inicializado"}};
+    }
+    
     std::optional<Product> product = m_repository->findById(id);
     if (!product) {
         return {{"success", false}, {"error", "Producto no encontrado"}};
@@ -77,6 +92,11 @@ QVariantMap InventoryService::getProduct(qint64 id) {
 }
 
 QVariantMap InventoryService::getProductBySku(const QString& sku) {
+    // Guard clause - verificar que el repositorio esté inicializado
+    if (!m_repository) {
+        return {{"success", false}, {"error", "Repositorio no inicializado"}};
+    }
+    
     std::optional<Product> product = m_repository->findBySku(sku);
     if (!product) {
         return {{"success", false}, {"error", "Producto no encontrado"}};
@@ -85,6 +105,11 @@ QVariantMap InventoryService::getProductBySku(const QString& sku) {
 }
 
 QVariantMap InventoryService::getProductByBarcode(const QString& barcode) {
+    // Guard clause - verificar que el repositorio esté inicializado
+    if (!m_repository) {
+        return {{"success", false}, {"error", "Repositorio no inicializado"}};
+    }
+    
     std::optional<Product> product = m_repository->findByBarcode(barcode);
     if (!product) {
         return {{"success", false}, {"error", "Producto no encontrado"}};
@@ -93,6 +118,11 @@ QVariantMap InventoryService::getProductByBarcode(const QString& barcode) {
 }
 
 QVariantList InventoryService::getAllProducts() {
+    // Guard clause - verificar que el repositorio esté inicializado
+    if (!m_repository) {
+        return {};
+    }
+    
     QVariantList result;
     for (const auto& product : m_repository->findAll()) {
         result.append(product.toVariantMap());
@@ -101,6 +131,11 @@ QVariantList InventoryService::getAllProducts() {
 }
 
 QVariantList InventoryService::getActiveProducts() {
+    // Guard clause - verificar que el repositorio esté inicializado
+    if (!m_repository) {
+        return {};
+    }
+    
     QVariantList result;
     for (const auto& product : m_repository->findActive()) {
         result.append(product.toVariantMap());
@@ -109,6 +144,11 @@ QVariantList InventoryService::getActiveProducts() {
 }
 
 QVariantList InventoryService::getLowStockProducts() {
+    // Guard clause - verificar que el repositorio esté inicializado
+    if (!m_repository) {
+        return {};
+    }
+    
     QVariantList result;
     for (const auto& product : m_repository->findLowStock()) {
         result.append(product.toVariantMap());
@@ -117,6 +157,11 @@ QVariantList InventoryService::getLowStockProducts() {
 }
 
 QVariantList InventoryService::getOutOfStockProducts() {
+    // Guard clause - verificar que el repositorio esté inicializado
+    if (!m_repository) {
+        return {};
+    }
+    
     QVariantList result;
     for (const auto& product : m_repository->findOutOfStock()) {
         result.append(product.toVariantMap());
@@ -125,6 +170,11 @@ QVariantList InventoryService::getOutOfStockProducts() {
 }
 
 QVariantList InventoryService::getProductsByCategory(const QString& category) {
+    // Guard clause - verificar que el repositorio esté inicializado
+    if (!m_repository) {
+        return {};
+    }
+    
     QVariantList result;
     for (const auto& product : m_repository->findByCategory(category)) {
         result.append(product.toVariantMap());
@@ -133,6 +183,11 @@ QVariantList InventoryService::getProductsByCategory(const QString& category) {
 }
 
 QVariantList InventoryService::searchProducts(const QString& query) {
+    // Guard clause - verificar que el repositorio esté inicializado
+    if (!m_repository) {
+        return {};
+    }
+    
     QVariantList result;
     for (const auto& product : m_repository->searchByName(query)) {
         result.append(product.toVariantMap());
@@ -141,6 +196,11 @@ QVariantList InventoryService::searchProducts(const QString& query) {
 }
 
 bool InventoryService::deleteProduct(qint64 id) {
+    // Guard clause - verificar que el repositorio esté inicializado
+    if (!m_repository) {
+        return false;
+    }
+    
     InventoryResult result = m_repository->remove(id);
     if (result) {
         emit productRemoved(id);
@@ -151,6 +211,11 @@ bool InventoryService::deleteProduct(qint64 id) {
 }
 
 bool InventoryService::deactivateProduct(qint64 id) {
+    // Guard clause - verificar que el repositorio esté inicializado
+    if (!m_repository) {
+        return false;
+    }
+    
     InventoryResult result = m_repository->deactivate(id);
     if (result) {
         std::optional<Product> product = m_repository->findById(id);
@@ -163,6 +228,11 @@ bool InventoryService::deactivateProduct(qint64 id) {
 }
 
 bool InventoryService::activateProduct(qint64 id) {
+    // Guard clause - verificar que el repositorio esté inicializado
+    if (!m_repository) {
+        return false;
+    }
+    
     InventoryResult result = m_repository->activate(id);
     if (result) {
         std::optional<Product> product = m_repository->findById(id);
@@ -175,6 +245,11 @@ bool InventoryService::activateProduct(qint64 id) {
 }
 
 bool InventoryService::updateStock(qint64 id, int quantity) {
+    // Guard clause - verificar que el repositorio esté inicializado
+    if (!m_repository) {
+        return false;
+    }
+    
     InventoryResult result = m_repository->updateStock(id, quantity);
     if (result) {
         std::optional<Product> product = m_repository->findById(id);
@@ -187,6 +262,11 @@ bool InventoryService::updateStock(qint64 id, int quantity) {
 }
 
 bool InventoryService::adjustStock(qint64 id, int delta) {
+    // Guard clause - verificar que el repositorio esté inicializado
+    if (!m_repository) {
+        return false;
+    }
+    
     std::optional<Product> existing = m_repository->findById(id);
     if (!existing) {
         return false;
@@ -201,18 +281,38 @@ bool InventoryService::adjustStock(qint64 id, int delta) {
 }
 
 int InventoryService::count() const {
+    // Guard clause - verificar que el repositorio esté inicializado
+    if (!m_repository) {
+        return 0;
+    }
+    
     return m_repository->count();
 }
 
 int InventoryService::activeCount() const {
+    // Guard clause - verificar que el repositorio esté inicializado
+    if (!m_repository) {
+        return 0;
+    }
+    
     return m_repository->countActive();
 }
 
 int InventoryService::lowStockCount() const {
+    // Guard clause - verificar que el repositorio esté inicializado
+    if (!m_repository) {
+        return 0;
+    }
+    
     return m_repository->countLowStock();
 }
 
 QVariantList InventoryService::getAllCategories() {
+    // Guard clause - verificar que el repositorio esté inicializado
+    if (!m_repository) {
+        return {};
+    }
+    
     QVariantList result;
     for (const auto& category : m_repository->getAllCategories()) {
         result.append(category);
@@ -221,6 +321,11 @@ QVariantList InventoryService::getAllCategories() {
 }
 
 void InventoryService::updatePricesWithExchangeRate(double exchangeRate) {
+    // Guard clause - verificar que el repositorio esté inicializado
+    if (!m_repository) {
+        return;
+    }
+    
     for (auto& product : m_repository->findAll()) {
         product.calculateSalePrice(exchangeRate);
         m_repository->save(product);
@@ -229,6 +334,11 @@ void InventoryService::updatePricesWithExchangeRate(double exchangeRate) {
 }
 
 void InventoryService::updateProductPrice(qint64 id, double costUsd, double marginPercent, double exchangeRate) {
+    // Guard clause - verificar que el repositorio esté inicializado
+    if (!m_repository) {
+        return;
+    }
+    
     std::optional<Product> existing = m_repository->findById(id);
     if (!existing) {
         return;

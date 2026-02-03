@@ -41,6 +41,7 @@ public:
     Q_INVOKABLE QVariantMap getSalesSummary(const QDate& startDate, const QDate& endDate, qint64 productId = 0);
     Q_INVOKABLE QVariantList getTopSellingProducts(const QDate& startDate, const QDate& endDate, int limit = 10);
     Q_INVOKABLE QVariantList getDailySalesTotals(const QDate& startDate, const QDate& endDate);
+    Q_INVOKABLE QVariantMap getDailySalesReport(const QDate& date);
     Q_INVOKABLE QVariantMap getGeneralStatistics();
     
     // Métodos QML invocables - Exportación

@@ -6,6 +6,7 @@
 #include "ReportingService.hpp"
 #include "core/database/DatabaseManager.hpp"
 #include "core/logger/Logger.hpp"
+#include "core/utils/FileHandler.hpp"
 
 #include <QDir>
 #include <QStandardPaths>
@@ -42,6 +43,12 @@ ReportingService& ReportingService::instance() {
 // Generar reporte de ventas
 //==============================================================================
 QVariantList ReportingService::generateSalesReport(const QDate& startDate, const QDate& endDate, qint64 productId) {
+    // Guard clause - verificar que el repositorio esté inicializado
+    if (!m_repository) {
+        setError("Repositorio no inicializado");
+        return {};
+    }
+    
     setGenerating(true);
     setProgress(0);
     
@@ -77,6 +84,12 @@ QVariantList ReportingService::generateSalesReport(const QDate& startDate, const
 // Obtener resumen de ventas
 //==============================================================================
 QVariantMap ReportingService::getSalesSummary(const QDate& startDate, const QDate& endDate, qint64 productId) {
+    // Guard clause - verificar que el repositorio esté inicializado
+    if (!m_repository) {
+        setError("Repositorio no inicializado");
+        return {};
+    }
+    
     try {
         auto filters = buildFilters(startDate, endDate, productId);
         if (!filters.isValid()) {
@@ -96,6 +109,12 @@ QVariantMap ReportingService::getSalesSummary(const QDate& startDate, const QDat
 // Obtener productos más vendidos
 //==============================================================================
 QVariantList ReportingService::getTopSellingProducts(const QDate& startDate, const QDate& endDate, int limit) {
+    // Guard clause - verificar que el repositorio esté inicializado
+    if (!m_repository) {
+        setError("Repositorio no inicializado");
+        return {};
+    }
+    
     try {
         auto filters = buildFilters(startDate, endDate);
         if (!filters.isValid()) {
@@ -116,6 +135,12 @@ QVariantList ReportingService::getTopSellingProducts(const QDate& startDate, con
 // Obtener totales diarios de ventas
 //==============================================================================
 QVariantList ReportingService::getDailySalesTotals(const QDate& startDate, const QDate& endDate) {
+    // Guard clause - verificar que el repositorio esté inicializado
+    if (!m_repository) {
+        setError("Repositorio no inicializado");
+        return {};
+    }
+    
     try {
         auto filters = buildFilters(startDate, endDate);
         if (!filters.isValid()) {
@@ -136,6 +161,12 @@ QVariantList ReportingService::getDailySalesTotals(const QDate& startDate, const
 // Obtener estadísticas generales
 //==============================================================================
 QVariantMap ReportingService::getGeneralStatistics() {
+    // Guard clause - verificar que el repositorio esté inicializado
+    if (!m_repository) {
+        setError("Repositorio no inicializado");
+        return {};
+    }
+    
     try {
         return m_repository->getGeneralStatistics();
     } catch (const std::exception& e) {
@@ -254,6 +285,12 @@ bool ReportingService::printReport(const QVariantList& data) {
 // Obtener categorías de productos
 //==============================================================================
 QStringList ReportingService::getProductCategories() {
+    // Guard clause - verificar que el repositorio esté inicializado
+    if (!m_repository) {
+        setError("Repositorio no inicializado");
+        return {};
+    }
+    
     try {
         return m_repository->getProductCategories();
     } catch (const std::exception& e) {
@@ -266,6 +303,12 @@ QStringList ReportingService::getProductCategories() {
 // Obtener información de producto
 //==============================================================================
 QVariantMap ReportingService::getProductInfo(qint64 productId) {
+    // Guard clause - verificar que el repositorio esté inicializado
+    if (!m_repository) {
+        setError("Repositorio no inicializado");
+        return {};
+    }
+    
     try {
         return m_repository->getProductInfo(productId);
     } catch (const std::exception& e) {
@@ -347,32 +390,47 @@ QVariantList ReportingService::convertSalesReportData(const QList<SalesReportDat
 // Escribir archivo CSV
 //==============================================================================
 bool ReportingService::writeCSVFile(const QString& fileName, const QVariantList& data) {
-    QFile file(fileName);
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        setError(QString("No se puede abrir el archivo: %1").arg(fileName));
+    using Vento::Utils::FileHandler;
+    
+    try {
+        FileHandler file(fileName, QIODevice::WriteOnly | QIODevice::Text);
+        
+        if (!file.isOpen()) {
+            setError(QString("No se puede abrir el archivo: %1").arg(file.errorString()));
+            return false;
+        }
+        
+        // Escribir encabezados
+        if (!file.writeLine("Producto ID,Nombre Producto,Código,Fecha,Cantidad,Venta Total,Precio Promedio")) {
+            setError("Error escribiendo encabezados CSV");
+            return false;
+        }
+        
+        // Escribir datos
+        for (const auto& item : data) {
+            QVariantMap map = item.toMap();
+            QString line = QString("%1,\"%2\",%3,%4,%5,%6,%7")
+                .arg(map["productId"].toString())
+                .arg(map["productName"].toString())
+                .arg(map["productCode"].toString())
+                .arg(map["date"].toString())
+                .arg(map["quantitySold"].toString())
+                .arg(map["totalSales"].toString())
+                .arg(map["averagePrice"].toString());
+            
+            if (!file.writeLine(line)) {
+                setError("Error escribiendo datos CSV");
+                return false;
+            }
+        }
+        
+        // El archivo se cierra automáticamente por RAII al salir del scope
+        return true;
+        
+    } catch (const std::exception& e) {
+        setError(QString("Error escribiendo archivo CSV: %1").arg(e.what()));
         return false;
     }
-    
-    QTextStream out(&file);
-    out.setEncoding(QStringConverter::Utf8);
-    
-    // Escribir encabezados
-    out << "Producto ID,Nombre Producto,Código,Fecha,Cantidad,Venta Total,Precio Promedio\n";
-    
-    // Escribir datos
-    for (const auto& item : data) {
-        QVariantMap map = item.toMap();
-        out << map["productId"].toString() << ","
-            << "\"" << map["productName"].toString() << "\"" << ","
-            << map["productCode"].toString() << ","
-            << map["date"].toString() << ","
-            << map["quantitySold"].toString() << ","
-            << map["totalSales"].toString() << ","
-            << map["averagePrice"].toString() << "\n";
-    }
-    
-    file.close();
-    return true;
 }
 
 //==============================================================================
@@ -510,6 +568,54 @@ void ReportingService::printData(const QVariantList& data) {
         
         document.setHtml(html);
         document.print(&printer);
+    }
+}
+
+//==============================================================================
+// Generar reporte diario de ventas
+//==============================================================================
+QVariantMap ReportingService::getDailySalesReport(const QDate& date) {
+    QVariantMap report;
+    
+    // Guard clause - verificar que el repositorio esté inicializado
+    if (!m_repository) {
+        setError("Repositorio no inicializado");
+        return {};
+    }
+    
+    try {
+        // Obtener resumen del día
+        auto summary = getSalesSummary(date, date);
+        report["summary"] = summary;
+        
+        // Obtener ventas individuales del día
+        auto salesData = generateSalesReport(date, date);
+        report["sales"] = salesData;
+        
+        // Obtener productos más vendidos del día
+        auto topProducts = getTopSellingProducts(date, date, 10);
+        report["topProducts"] = topProducts;
+        
+        // Calcular estadísticas adicionales
+        double totalSales = summary["totalSales"].toDouble();
+        int totalTransactions = summary["totalTransactions"].toInt();
+        double averageSale = totalTransactions > 0 ? totalSales / totalTransactions : 0.0;
+        
+        report["averageSale"] = averageSale;
+        report["date"] = date.toString("dd/MM/yyyy");
+        report["dateFormatted"] = date.toString("dddd, d [de] MMMM [de] yyyy");
+        
+        Logger::instance().info(QString("Reporte diario generado para %1: %2 ventas, %3 total")
+            .arg(date.toString("dd/MM/yyyy"))
+            .arg(totalTransactions)
+            .arg(QString::number(totalSales, 'f', 2)));
+        
+        return report;
+        
+    } catch (const std::exception& e) {
+        setError(QString("Error generando reporte diario: %1").arg(e.what()));
+        Logger::instance().error(lastError());
+        return {};
     }
 }
 

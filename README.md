@@ -26,6 +26,29 @@ src/
 
 ## 🚀 Compilación
 
+### Windows
+
+1. **Instalar requisitos:**
+   - Descarga e instala [Qt 6.5+](https://www.qt.io/download)
+   - Instala [Visual Studio 2019+](https://visualstudio.microsoft.com/) (con el componente "Desktop development with C++")
+   - Asegúrate de tener CMake 3.21+
+
+2. **Configurar variables de entorno:**
+   ```powershell
+   # Añade Qt al PATH (ajusta la ruta según tu instalación)
+   $env:PATH += ";C:\Qt\6.5.0\msvc2019_64\bin"
+   ```
+
+3. **Compilar:**
+   ```powershell
+   mkdir build
+   cd build
+   cmake -G "Visual Studio 17 2022" ..
+   cmake --build . --config Release
+   ```
+
+### Linux/macOS
+
 ```bash
 mkdir build && cd build
 cmake ..

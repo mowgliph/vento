@@ -1,0 +1,83 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Configure CMake",
+      "type": "shell",
+      "command": "cmake",
+      "args": ["-B", "build", "-G", "Ninja", "-DCMAKE_BUILD_TYPE=Debug"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Build Vento",
+      "type": "shell",
+      "command": "cmake",
+      "args": ["--build", "build", "--target", "Vento", "--config", "Debug"],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": [],
+      "dependsOn": ["Configure CMake"]
+    },
+    {
+      "label": "Clean Build",
+      "type": "shell",
+      "command": "cmake",
+      "args": ["--build", "build", "--target", "clean"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Run Vento",
+      "type": "shell",
+      "command": "${workspaceFolder}/build/Vento.exe",
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "dedicated"
+      },
+      "dependsOn": ["Build Vento"]
+    },
+    {
+      "label": "Format Code",
+      "type": "shell",
+      "command": "clang-format",
+      "args": [
+        "-i",
+        "--style=file",
+        "${workspaceFolder}/src/**/*.cpp",
+        "${workspaceFolder}/src/**/*.hpp",
+        "${workspaceFolder}/src/**/*.h"
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared"
+      }
+    }
+  ]
+}

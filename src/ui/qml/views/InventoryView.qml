@@ -6,37 +6,51 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import Vento.UI
+import QtQuick.Dialogs
 import Vento.Inventory
+import Vento.Currency
 
 ColumnLayout {
     id: inventoryView
     
-    spacing: Theme.spacingLg
+    property var appColors: ({
+        primary: "#0078D4",
+        primaryDark: "#005A9E", 
+        secondary: "#6B6B6B",
+        success: "#107C10",
+        warning: "#FF8C00",
+        danger: "#D13438",
+        surface: "#FFFFFF",
+        background: "#F3F3F3",
+        text: "#1A1A1A",
+        textSecondary: "#6B6B6B"
+    })
+    
+    spacing: 16
     anchors.fill: parent
-    anchors.margins: Theme.spacingXl
+    anchors.margins: 24
     
     //==========================================================================
     // Encabezado
     //==========================================================================
     Row {
         Layout.fillWidth: true
-        spacing: Theme.spacingLg
+        spacing: 16
         
         Column {
-            spacing: Theme.spacingXs
+            spacing: 4
             
             Text {
                 text: "📦 Inventario"
-                font.pixelSize: Theme.fontSizeDisplay
-                font.weight: Theme.fontWeightBold
-                color: Theme.textPrimary
+                font.pixelSize: 28
+                font.weight: Font.Bold
+                color: appColors.text
             }
             
             Text {
                 text: "Gestiona tu catálogo de productos"
-                font.pixelSize: Theme.fontSizeMd
-                color: Theme.textSecondary
+                font.pixelSize: 14
+                color: appColors.textSecondary
             }
         }
         
@@ -46,15 +60,15 @@ ColumnLayout {
             text: "➕ Nuevo Producto"
             
             background: Rectangle {
-                color: parent.hovered ? Theme.primaryDark : Theme.primary
-                radius: Theme.radiusMd
+                color: parent.hovered ? appColors.primaryDark : appColors.primary
+                radius: 8
             }
             
             contentItem: Text {
                 text: parent.text
-                color: Theme.textOnPrimary
-                font.pixelSize: Theme.fontSizeMd
-                font.weight: Theme.fontWeightMedium
+                color: "white"
+                font.pixelSize: 14
+                font.weight: Font.Medium
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
             }
@@ -68,56 +82,53 @@ ColumnLayout {
     //==========================================================================
     Row {
         Layout.fillWidth: true
-        spacing: Theme.spacingLg
+        spacing: 16
         
-        SearchBar {
+        TextField {
+            id: searchField
             Layout.preferredWidth: 300
-            placeholderText: "Buscar productos..."
+            placeholderText: "🔍 Buscar productos..."
+            
+            background: Rectangle {
+                radius: 8
+                color: appColors.surface
+                border.color: searchField.activeFocus ? appColors.primary : "#E0E0E0"
+                border.width: 2
+            }
         }
         
         Item { Layout.fillWidth: true }
         
         ComboBox {
-            model: ["Todas las categorías", "Electrónica", "Ropa", "Alimentos", "Otros"]
+            id: categoryCombo
+            model: ["Todas las categorías"] + InventoryService.getAllCategories()
             currentIndex: 0
             
             background: Rectangle {
-                color: Theme.surface
-                border.color: Theme.border
+                color: appColors.surface
+                border.color: "#E0E0E0"
                 border.width: 1
-                radius: Theme.radiusMd
+                radius: 8
             }
         }
         
         Button {
-            text: "📥 Importar"
+            text: "� Actualizar Precios"
             flat: true
             
             background: Rectangle {
-                color: parent.hovered ? Theme.primaryContainer : "transparent"
-                radius: Theme.radiusMd
+                color: parent.hovered ? "#F0F0F0" : "transparent"
+                radius: 8
             }
             
             contentItem: Text {
                 text: parent.text
-                color: Theme.primary
-                font.pixelSize: Theme.fontSizeMd
-            }
-        }
-        
-        Button {
-            text: "📤 Exportar"
-            flat: true
-            
-            background: Rectangle {
-                color: parent.hovered ? Theme.primaryContainer : "transparent"
-                radius: Theme.radiusMd
+                color: appColors.primary
+                font.pixelSize: 12
             }
             
-            contentItem: Text {
-                text: parent.text
-                color: Theme.primary
-                font.pixelSize: Theme.fontSizeMd
+            onClicked: {
+                InventoryService.updatePricesWithExchangeRate(CurrencyService.exchangeRate)
             }
         }
     }
@@ -127,7 +138,7 @@ ColumnLayout {
     //==========================================================================
     Row {
         Layout.fillWidth: true
-        spacing: Theme.spacingMd
+        spacing: 8
         
         ButtonGroup {
             id: viewToggleGroup
@@ -141,15 +152,15 @@ ColumnLayout {
             autoExclusive: true
             
             background: Rectangle {
-                color: gridViewBtn.checked ? Theme.primary : 
-                       gridViewBtn.hovered ? Theme.surfaceHover : "transparent"
-                radius: Theme.radiusSm
+                color: gridViewBtn.checked ? appColors.primary : 
+                       gridViewBtn.hovered ? "#F0F0F0" : "transparent"
+                radius: 6
             }
             
             contentItem: Text {
                 text: parent.text
-                color: gridViewBtn.checked ? Theme.textOnPrimary : Theme.textPrimary
-                font.pixelSize: Theme.fontSizeLg
+                color: gridViewBtn.checked ? "white" : appColors.text
+                font.pixelSize: 16
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
             }
@@ -165,15 +176,15 @@ ColumnLayout {
             autoExclusive: true
             
             background: Rectangle {
-                color: listViewBtn.checked ? Theme.primary : 
-                       listViewBtn.hovered ? Theme.surfaceHover : "transparent"
-                radius: Theme.radiusSm
+                color: listViewBtn.checked ? appColors.primary : 
+                       listViewBtn.hovered ? "#F0F0F0" : "transparent"
+                radius: 6
             }
             
             contentItem: Text {
                 text: parent.text
-                color: listViewBtn.checked ? Theme.textOnPrimary : Theme.textPrimary
-                font.pixelSize: Theme.fontSizeLg
+                color: listViewBtn.checked ? "white" : appColors.text
+                font.pixelSize: 16
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
             }
@@ -185,9 +196,9 @@ ColumnLayout {
         Item { Layout.fillWidth: true }
         
         Text {
-            text: productGrid.count + " productos"
-            font.pixelSize: Theme.fontSizeSm
-            color: Theme.textSecondary
+            text: InventoryService.count + " productos"
+            font.pixelSize: 12
+            color: appColors.textSecondary
             anchors.verticalCenter: parent.verticalCenter
         }
     }
@@ -212,22 +223,155 @@ ColumnLayout {
                 cellWidth: 280
                 cellHeight: 320
                 
-                model: 12 // Número de productos de ejemplo
+                model: InventoryService.getActiveProducts()
                 
-                delegate: ProductCard {
-                    width: productGrid.cellWidth - Theme.spacingMd
-                    height: productGrid.cellHeight - Theme.spacingMd
+                delegate: Rectangle {
+                    width: productGrid.cellWidth - 16
+                    height: productGrid.cellHeight - 16
+                    color: appColors.surface
+                    radius: 12
+                    border.color: "#E0E0E0"
+                    border.width: 1
                     
-                    name: "Producto " + (index + 1)
-                    description: "Descripción del producto " + (index + 1)
-                    price: 25.50 + index * 5.25
-                    stock: 50 - index * 2
-                    category: index % 3 === 0 ? "Electrónica" : 
-                             index % 3 === 1 ? "Ropa" : "Alimentos"
-                    
-                    onClicked: viewProduct(index)
-                    editClicked: editProduct(index)
-                    deleteClicked: deleteProduct(index)
+                    ColumnLayout {
+                        anchors.fill: parent
+                        anchors.margins: 16
+                        spacing: 12
+                        
+                        // Header
+                        Row {
+                            Layout.fillWidth: true
+                            
+                            Text {
+                                text: "📦"
+                                font.pixelSize: 24
+                            }
+                            
+                            Item { Layout.fillWidth: true }
+                            
+                            Rectangle {
+                                width: 60
+                                height: 24
+                                radius: 12
+                                color: modelData.stockQuantity <= 5 ? appColors.warning : 
+                                       modelData.stockQuantity <= 0 ? appColors.danger : appColors.success
+                                
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: modelData.stockQuantity <= 0 ? "Agotado" : 
+                                          modelData.stockQuantity <= 5 ? "Bajo" : "OK"
+                                    color: "white"
+                                    font.pixelSize: 10
+                                    font.weight: Font.Bold
+                                }
+                            }
+                        }
+                        
+                        // Product info
+                        Column {
+                            Layout.fillWidth: true
+                            spacing: 4
+                            
+                            Text {
+                                text: modelData.name
+                                font.pixelSize: 14
+                                font.weight: Font.Bold
+                                color: appColors.text
+                                wrapMode: Text.WordWrap
+                                Layout.fillWidth: true
+                            }
+                            
+                            Text {
+                                text: modelData.description || ""
+                                font.pixelSize: 12
+                                color: appColors.textSecondary
+                                wrapMode: Text.WordWrap
+                                Layout.fillWidth: true
+                                visible: modelData.description !== ""
+                            }
+                            
+                            Text {
+                                text: modelData.category || "Sin categoría"
+                                font.pixelSize: 11
+                                color: appColors.textSecondary
+                            }
+                        }
+                        
+                        Item { Layout.fillHeight: true }
+                        
+                        // Price and stock
+                        Column {
+                            Layout.fillWidth: true
+                            spacing: 4
+                            
+                            Text {
+                                text: CurrencyService.localCurrencySymbol + " " + modelData.salePrice.toFixed(2)
+                                font.pixelSize: 18
+                                font.weight: Font.Bold
+                                color: appColors.primary
+                            }
+                            
+                            Text {
+                                text: "Costo: $" + modelData.costUsd.toFixed(2) + " → " + CurrencyService.localCurrencySymbol + modelData.costLocal.toFixed(2)
+                                font.pixelSize: 10
+                                color: appColors.textSecondary
+                            }
+                            
+                            Text {
+                                text: "Stock: " + modelData.stockQuantity
+                                font.pixelSize: 12
+                                color: modelData.stockQuantity <= 5 ? appColors.warning : appColors.text
+                            }
+                        }
+                        
+                        // Actions
+                        Row {
+                            Layout.fillWidth: true
+                            spacing: 8
+                            
+                            Button {
+                                Layout.preferredWidth: 60
+                                Layout.preferredHeight: 32
+                                text: "👁️"
+                                flat: true
+                                
+                                background: Rectangle {
+                                    color: parent.hovered ? "#F0F0F0" : "transparent"
+                                    radius: 6
+                                }
+                                
+                                onClicked: viewProduct(modelData.id)
+                            }
+                            
+                            Button {
+                                Layout.preferredWidth: 60
+                                Layout.preferredHeight: 32
+                                text: "✏️"
+                                flat: true
+                                
+                                background: Rectangle {
+                                    color: parent.hovered ? appColors.warning + "20" : "transparent"
+                                    radius: 6
+                                }
+                                
+                                onClicked: editProduct(modelData.id)
+                            }
+                            
+                            Button {
+                                Layout.preferredWidth: 60
+                                Layout.preferredHeight: 32
+                                text: "🗑️"
+                                flat: true
+                                
+                                background: Rectangle {
+                                    color: parent.hovered ? appColors.danger + "20" : "transparent"
+                                    radius: 6
+                                }
+                                
+                                onClicked: deleteProduct(modelData.id)
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -239,26 +383,28 @@ ColumnLayout {
             ListView {
                 id: productList
                 
-                model: 12
+                model: InventoryService.getActiveProducts()
                 
                 delegate: Rectangle {
                     width: productList.width
                     height: 80
                     
-                    color: index % 2 === 0 ? "transparent" : Theme.background
+                    color: index % 2 === 0 ? "transparent" : appColors.background
                     
                     Row {
                         anchors.fill: parent
-                        anchors.leftMargin: Theme.spacingLg
-                        anchors.rightMargin: Theme.spacingLg
-                        spacing: Theme.spacingLg
+                        anchors.leftMargin: 16
+                        anchors.rightMargin: 16
+                        spacing: 16
                         
-                        // Imagen/Icono
+                        // Icon
                         Rectangle {
                             width: 60
                             height: 60
-                            color: Theme.background
-                            radius: Theme.radiusMd
+                            color: appColors.surface
+                            radius: 8
+                            border.color: "#E0E0E0"
+                            border.width: 1
                             
                             Text {
                                 anchors.centerIn: parent
@@ -267,32 +413,32 @@ ColumnLayout {
                             }
                         }
                         
-                        // Información
+                        // Info
                         Column {
                             Layout.fillWidth: true
                             anchors.verticalCenter: parent.verticalCenter
                             spacing: 2
                             
                             Text {
-                                text: "Producto " + (index + 1)
-                                font.pixelSize: Theme.fontSizeMd
-                                font.weight: Theme.fontWeightSemiBold
-                                color: Theme.textPrimary
+                                text: modelData.name
+                                font.pixelSize: 14
+                                font.weight: Font.Bold
+                                color: appColors.text
                             }
                             
                             Text {
-                                text: "Descripción del producto " + (index + 1)
-                                font.pixelSize: Theme.fontSizeSm
-                                color: Theme.textSecondary
+                                text: (modelData.description || "").substring(0, 50) + ((modelData.description || "").length > 50 ? "..." : "")
+                                font.pixelSize: 12
+                                color: appColors.textSecondary
                             }
                         }
                         
-                        // Precio
+                        // Price
                         Text {
-                            text: "Bs. " + (25.50 + index * 5.25).toFixed(2)
-                            font.pixelSize: Theme.fontSizeLg
-                            font.weight: Theme.fontWeightBold
-                            color: Theme.primary
+                            text: CurrencyService.localCurrencySymbol + " " + modelData.salePrice.toFixed(2)
+                            font.pixelSize: 16
+                            font.weight: Font.Bold
+                            color: appColors.primary
                             anchors.verticalCenter: parent.verticalCenter
                         }
                         
@@ -300,21 +446,23 @@ ColumnLayout {
                         Rectangle {
                             width: 80
                             height: 28
-                            color: (50 - index * 2) < 10 ? Theme.warningLight : Theme.successLight
-                            radius: Theme.radiusSm
+                            color: modelData.stockQuantity <= 5 ? appColors.warning + "20" : appColors.success + "20"
+                            radius: 14
+                            border.color: modelData.stockQuantity <= 5 ? appColors.warning : appColors.success
+                            border.width: 1
                             
                             Text {
                                 anchors.centerIn: parent
-                                text: "Stock: " + (50 - index * 2)
-                                font.pixelSize: Theme.fontSizeXs
-                                color: (50 - index * 2) < 10 ? Theme.warningDark : Theme.successDark
-                                font.weight: Theme.fontWeightMedium
+                                text: "Stock: " + modelData.stockQuantity
+                                font.pixelSize: 11
+                                color: modelData.stockQuantity <= 5 ? appColors.warning : appColors.success
+                                font.weight: Font.Medium
                             }
                         }
                         
-                        // Acciones
+                        // Actions
                         Row {
-                            spacing: Theme.spacingXs
+                            spacing: 4
                             anchors.verticalCenter: parent.verticalCenter
                             
                             Button {
@@ -324,11 +472,11 @@ ColumnLayout {
                                 flat: true
                                 
                                 background: Rectangle {
-                                    color: parent.hovered ? Theme.primaryContainer : "transparent"
-                                    radius: Theme.radiusSm
+                                    color: parent.hovered ? "#F0F0F0" : "transparent"
+                                    radius: 6
                                 }
                                 
-                                onClicked: viewProduct(index)
+                                onClicked: viewProduct(modelData.id)
                             }
                             
                             Button {
@@ -338,11 +486,11 @@ ColumnLayout {
                                 flat: true
                                 
                                 background: Rectangle {
-                                    color: parent.hovered ? Theme.warningLight : "transparent"
-                                    radius: Theme.radiusSm
+                                    color: parent.hovered ? appColors.warning + "20" : "transparent"
+                                    radius: 6
                                 }
                                 
-                                onClicked: editProduct(index)
+                                onClicked: editProduct(modelData.id)
                             }
                             
                             Button {
@@ -352,11 +500,11 @@ ColumnLayout {
                                 flat: true
                                 
                                 background: Rectangle {
-                                    color: parent.hovered ? Theme.errorLight : "transparent"
-                                    radius: Theme.radiusSm
+                                    color: parent.hovered ? appColors.danger + "20" : "transparent"
+                                    radius: 6
                                 }
                                 
-                                onClicked: deleteProduct(index)
+                                onClicked: deleteProduct(modelData.id)
                             }
                         }
                     }
@@ -371,80 +519,511 @@ ColumnLayout {
     Dialog {
         id: newProductDialog
         
-        title: "Nuevo Producto"
+        title: editingProduct ? "Editar Producto" : "Nuevo Producto"
         width: 600
-        height: 500
+        height: 650
+        
+        property bool editingProduct: false
+        property var currentProduct: null
         
         background: Rectangle {
-            color: Theme.surface
-            radius: Theme.radiusLg
-            border.color: Theme.border
+            color: appColors.surface
+            radius: 12
+            border.color: "#E0E0E0"
             border.width: 1
         }
         
         ColumnLayout {
             anchors.fill: parent
-            spacing: Theme.spacingLg
+            spacing: 16
             
-            Text {
-                text: "Agregar un nuevo producto al inventario"
-                font.pixelSize: Theme.fontSizeLg
-                font.weight: Theme.fontWeightSemiBold
-                color: Theme.textPrimary
-            }
-            
-            Rectangle {
+            ScrollView {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                color: Theme.background
-                radius: Theme.radiusMd
                 
-                Text {
-                    anchors.centerIn: parent
-                    text: "📝 Formulario de producto próximamente"
-                    color: Theme.textSecondary
-                    font.pixelSize: Theme.fontSizeMd
+                ColumnLayout {
+                    width: parent.width
+                    spacing: 16
+                    
+                    // Basic Information
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 200
+                        color: appColors.background
+                        radius: 8
+                        border.color: "#E0E0E0"
+                        border.width: 1
+                        
+                        ColumnLayout {
+                            anchors.fill: parent
+                            anchors.margins: 16
+                            spacing: 12
+                            
+                            Text {
+                                text: "📝 Información Básica"
+                                font.pixelSize: 14
+                                font.weight: Font.Bold
+                                color: appColors.text
+                            }
+                            
+                            TextField {
+                                id: nameField
+                                Layout.fillWidth: true
+                                placeholderText: "Nombre del producto *"
+                                
+                                background: Rectangle {
+                                    radius: 6
+                                    color: appColors.surface
+                                    border.color: nameField.activeFocus ? appColors.primary : "#E0E0E0"
+                                    border.width: 1
+                                }
+                            }
+                            
+                            TextField {
+                                id: descriptionField
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: 60
+                                placeholderText: "Descripción del producto"
+                                
+                                background: Rectangle {
+                                    radius: 6
+                                    color: appColors.surface
+                                    border.color: descriptionField.activeFocus ? appColors.primary : "#E0E0E0"
+                                    border.width: 1
+                                }
+                            }
+                            
+                            Row {
+                                Layout.fillWidth: true
+                                spacing: 12
+                                
+                                TextField {
+                                    id: skuField
+                                    Layout.preferredWidth: 150
+                                    placeholderText: "SKU"
+                                    
+                                    background: Rectangle {
+                                        radius: 6
+                                        color: appColors.surface
+                                        border.color: skuField.activeFocus ? appColors.primary : "#E0E0E0"
+                                        border.width: 1
+                                    }
+                                }
+                                
+                                TextField {
+                                    id: barcodeField
+                                    Layout.preferredWidth: 150
+                                    placeholderText: "Código de barras"
+                                    
+                                    background: Rectangle {
+                                        radius: 6
+                                        color: appColors.surface
+                                        border.color: barcodeField.activeFocus ? appColors.primary : "#E0E0E0"
+                                        border.width: 1
+                                    }
+                                }
+                                
+                                Item { Layout.fillWidth: true }
+                                
+                                TextField {
+                                    id: categoryField
+                                    Layout.preferredWidth: 150
+                                    placeholderText: "Categoría"
+                                    
+                                    background: Rectangle {
+                                        radius: 6
+                                        color: appColors.surface
+                                        border.color: categoryField.activeFocus ? appColors.primary : "#E0E0E0"
+                                        border.width: 1
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Pricing Information
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 200
+                        color: appColors.background
+                        radius: 8
+                        border.color: "#E0E0E0"
+                        border.width: 1
+                        
+                        ColumnLayout {
+                            anchors.fill: parent
+                            anchors.margins: 16
+                            spacing: 12
+                            
+                            Text {
+                                text: "💰 Precios y Costos"
+                                font.pixelSize: 14
+                                font.weight: Font.Bold
+                                color: appColors.text
+                            }
+                            
+                            Row {
+                                Layout.fillWidth: true
+                                spacing: 12
+                                
+                                Column {
+                                    spacing: 4
+                                    
+                                    Text {
+                                        text: "Costo USD:"
+                                        font.pixelSize: 12
+                                        color: appColors.textSecondary
+                                    }
+                                    
+                                    TextField {
+                                        id: costUsdField
+                                        width: 120
+                                        text: "0.00"
+                                        
+                                        validator: DoubleValidator {
+                                            bottom: 0
+                                            decimals: 2
+                                        }
+                                        
+                                        background: Rectangle {
+                                            radius: 6
+                                            color: appColors.surface
+                                            border.color: costUsdField.activeFocus ? appColors.primary : "#E0E0E0"
+                                            border.width: 1
+                                        }
+                                        
+                                        onTextChanged: {
+                                            if (text.length > 0) {
+                                                var cost = parseFloat(text) || 0
+                                                var margin = parseFloat(marginField.text) || 0
+                                                var exchangeRate = CurrencyService.exchangeRate
+                                                var salePrice = (cost * exchangeRate) * (1 + margin/100)
+                                                calculatedSalePriceField.text = salePrice.toFixed(2)
+                                            }
+                                        }
+                                    }
+                                }
+                                
+                                Column {
+                                    spacing: 4
+                                    
+                                    Text {
+                                        text: "Margen (%):"
+                                        font.pixelSize: 12
+                                        color: appColors.textSecondary
+                                    }
+                                    
+                                    TextField {
+                                        id: marginField
+                                        width: 80
+                                        text: "30"
+                                        
+                                        validator: DoubleValidator {
+                                            bottom: 0
+                                            decimals: 2
+                                        }
+                                        
+                                        background: Rectangle {
+                                            radius: 6
+                                            color: appColors.surface
+                                            border.color: marginField.activeFocus ? appColors.primary : "#E0E0E0"
+                                            border.width: 1
+                                        }
+                                        
+                                        onTextChanged: {
+                                            if (text.length > 0) {
+                                                var cost = parseFloat(costUsdField.text) || 0
+                                                var margin = parseFloat(text) || 0
+                                                var exchangeRate = CurrencyService.exchangeRate
+                                                var salePrice = (cost * exchangeRate) * (1 + margin/100)
+                                                calculatedSalePriceField.text = salePrice.toFixed(2)
+                                            }
+                                        }
+                                    }
+                                }
+                                
+                                Column {
+                                    spacing: 4
+                                    
+                                    Text {
+                                        text: "Precio Venta:"
+                                        font.pixelSize: 12
+                                        color: appColors.textSecondary
+                                    }
+                                    
+                                    TextField {
+                                        id: calculatedSalePriceField
+                                        width: 120
+                                        text: "0.00"
+                                        enabled: false
+                                        
+                                        background: Rectangle {
+                                            radius: 6
+                                            color: "#F0F0F0"
+                                            border.color: "#E0E0E0"
+                                            border.width: 1
+                                        }
+                                    }
+                                }
+                                
+                                Item { Layout.fillWidth: true }
+                                
+                                Column {
+                                    spacing: 4
+                                    
+                                    Text {
+                                        text: "Tasa actual:"
+                                        font.pixelSize: 12
+                                        color: appColors.textSecondary
+                                    }
+                                    
+                                    Text {
+                                        text: CurrencyService.localCurrencySymbol + " " + CurrencyService.exchangeRateFormatted
+                                        font.pixelSize: 14
+                                        font.weight: Font.Bold
+                                        color: appColors.primary
+                                    }
+                                }
+                            }
+                            
+                            CheckBox {
+                                id: manualPriceCheck
+                                text: "Establecer precio de venta manualmente"
+                                
+                                onCheckedChanged: {
+                                    manualSalePriceField.enabled = checked
+                                    if (!checked) {
+                                        manualSalePriceField.text = calculatedSalePriceField.text
+                                    }
+                                }
+                            }
+                            
+                            TextField {
+                                id: manualSalePriceField
+                                Layout.fillWidth: true
+                                placeholderText: "Precio de venta manual"
+                                enabled: false
+                                
+                                validator: DoubleValidator {
+                                    bottom: 0
+                                    decimals: 2
+                                }
+                                
+                                background: Rectangle {
+                                    radius: 6
+                                    color: appColors.surface
+                                    border.color: manualSalePriceField.activeFocus ? appColors.primary : "#E0E0E0"
+                                    border.width: 1
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Stock Information
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 100
+                        color: appColors.background
+                        radius: 8
+                        border.color: "#E0E0E0"
+                        border.width: 1
+                        
+                        ColumnLayout {
+                            anchors.fill: parent
+                            anchors.margins: 16
+                            spacing: 12
+                            
+                            Text {
+                                text: "📦 Inventario"
+                                font.pixelSize: 14
+                                font.weight: Font.Bold
+                                color: appColors.text
+                            }
+                            
+                            Row {
+                                Layout.fillWidth: true
+                                spacing: 12
+                                
+                                Column {
+                                    spacing: 4
+                                    
+                                    Text {
+                                        text: "Stock inicial:"
+                                        font.pixelSize: 12
+                                        color: appColors.textSecondary
+                                    }
+                                    
+                                    TextField {
+                                        id: stockField
+                                        width: 80
+                                        text: "0"
+                                        
+                                        validator: IntValidator {
+                                            bottom: 0
+                                        }
+                                        
+                                        background: Rectangle {
+                                            radius: 6
+                                            color: appColors.surface
+                                            border.color: stockField.activeFocus ? appColors.primary : "#E0E0E0"
+                                            border.width: 1
+                                        }
+                                    }
+                                }
+                                
+                                Column {
+                                    spacing: 4
+                                    
+                                    Text {
+                                        text: "Alerta bajo stock:"
+                                        font.pixelSize: 12
+                                        color: appColors.textSecondary
+                                    }
+                                    
+                                    TextField {
+                                        id: minStockField
+                                        width: 80
+                                        text: "5"
+                                        
+                                        validator: IntValidator {
+                                            bottom: 0
+                                        }
+                                        
+                                        background: Rectangle {
+                                            radius: 6
+                                            color: appColors.surface
+                                            border.color: minStockField.activeFocus ? appColors.primary : "#E0E0E0"
+                                            border.width: 1
+                                        }
+                                    }
+                                }
+                                
+                                Item { Layout.fillWidth: true }
+                                
+                                CheckBox {
+                                    id: activeCheck
+                                    text: "Producto activo"
+                                    checked: true
+                                }
+                            }
+                        }
+                    }
                 }
             }
             
+            // Action buttons
             Row {
                 Layout.alignment: Qt.AlignRight
-                spacing: Theme.spacingMd
+                spacing: 12
                 
                 Button {
                     text: "Cancelar"
                     flat: true
                     
                     background: Rectangle {
-                        color: parent.hovered ? Theme.surfaceHover : "transparent"
-                        radius: Theme.radiusMd
+                        color: parent.hovered ? "#F0F0F0" : "transparent"
+                        radius: 8
                     }
                     
-                    onClicked: newProductDialog.close()
+                    onClicked: {
+                        clearForm()
+                        newProductDialog.close()
+                    }
                 }
                 
                 Button {
-                    text: "Guardar Producto"
+                    text: editingProduct ? "Actualizar Producto" : "Guardar Producto"
                     
                     background: Rectangle {
-                        color: parent.hovered ? Theme.primaryDark : Theme.primary
-                        radius: Theme.radiusMd
+                        color: parent.hovered ? appColors.primaryDark : appColors.primary
+                        radius: 8
                     }
                     
                     contentItem: Text {
                         text: parent.text
-                        color: Theme.textOnPrimary
-                        font.pixelSize: Theme.fontSizeMd
-                        font.weight: Theme.fontWeightMedium
+                        color: "white"
+                        font.pixelSize: 14
+                        font.weight: Font.Medium
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
                     }
                     
-                    onClicked: {
-                        // Lógica para guardar producto
-                        newProductDialog.close()
-                    }
+                    onClicked: saveProduct()
                 }
+            }
+        }
+        
+        function clearForm() {
+            nameField.text = ""
+            descriptionField.text = ""
+            skuField.text = ""
+            barcodeField.text = ""
+            categoryField.text = ""
+            costUsdField.text = "0.00"
+            marginField.text = "30"
+            manualPriceCheck.checked = false
+            manualSalePriceField.text = "0.00"
+            stockField.text = "0"
+            minStockField.text = "5"
+            activeCheck.checked = true
+            editingProduct = false
+            currentProduct = null
+        }
+        
+        function loadProduct(productId) {
+            var result = InventoryService.getProduct(productId)
+            if (result.success) {
+                var product = result.product
+                nameField.text = product.name || ""
+                descriptionField.text = product.description || ""
+                skuField.text = product.sku || ""
+                barcodeField.text = product.barcode || ""
+                categoryField.text = product.category || ""
+                costUsdField.text = product.costUsd ? product.costUsd.toFixed(2) : "0.00"
+                marginField.text = product.marginPercent ? product.marginPercent.toFixed(2) : "30"
+                manualSalePriceField.text = product.salePrice ? product.salePrice.toFixed(2) : "0.00"
+                stockField.text = product.stockQuantity || 0
+                minStockField.text = product.minStockAlert || 5
+                activeCheck.checked = product.isActive !== false
+                editingProduct = true
+                currentProduct = product
+                open()
+            }
+        }
+        
+        function saveProduct() {
+            if (nameField.text.trim() === "") {
+                console.log("Error: El nombre es requerido")
+                return
+            }
+            
+            var productData = {
+                name: nameField.text.trim(),
+                description: descriptionField.text.trim(),
+                sku: skuField.text.trim(),
+                barcode: barcodeField.text.trim(),
+                category: categoryField.text.trim(),
+                costUsd: parseFloat(costUsdField.text) || 0,
+                marginPercent: parseFloat(marginField.text) || 0,
+                salePrice: manualPriceCheck.checked ? parseFloat(manualSalePriceField.text) || 0 : parseFloat(calculatedSalePriceField.text) || 0,
+                stockQuantity: parseInt(stockField.text) || 0,
+                minStockAlert: parseInt(minStockField.text) || 5,
+                isActive: activeCheck.checked
+            }
+            
+            var result
+            if (editingProduct && currentProduct) {
+                result = InventoryService.updateProduct(currentProduct.id, productData)
+            } else {
+                result = InventoryService.createProduct(productData)
+            }
+            
+            if (result.success) {
+                clearForm()
+                close()
+                console.log("Producto guardado exitosamente")
+            } else {
+                console.log("Error al guardar producto:", result.error)
             }
         }
     }
@@ -452,15 +1031,81 @@ ColumnLayout {
     //==========================================================================
     // Funciones
     //==========================================================================
-    function viewProduct(index) {
-        console.log("Ver producto:", index)
+    function viewProduct(productId) {
+        newProductDialog.loadProduct(productId)
     }
     
-    function editProduct(index) {
-        console.log("Editar producto:", index)
+    function editProduct(productId) {
+        newProductDialog.loadProduct(productId)
     }
     
-    function deleteProduct(index) {
-        console.log("Eliminar producto:", index)
+    function deleteProduct(productId) {
+        // Simple confirmation dialog
+        var result = InventoryService.getProduct(productId)
+        if (result.success) {
+            console.log("Eliminar producto:", result.product.name)
+            InventoryService.deleteProduct(productId)
+        }
+    }
+    
+    // Search functionality
+    function searchProducts() {
+        if (searchField.text.trim() === "") {
+            productGrid.model = InventoryService.getActiveProducts()
+            productList.model = InventoryService.getActiveProducts()
+        } else {
+            var results = InventoryService.searchProducts(searchField.text.trim())
+            productGrid.model = results
+            productList.model = results
+        }
+    }
+    
+    // Category filter
+    function filterByCategory() {
+        if (categoryCombo.currentIndex === 0) {
+            searchProducts()
+        } else {
+            var category = categoryCombo.currentText
+            var results = InventoryService.getProductsByCategory(category)
+            productGrid.model = results
+            productList.model = results
+        }
+    }
+    
+    // Connections for real-time updates
+    Connections {
+        target: InventoryService
+        
+        function onProductAdded(product) {
+            searchProducts()
+        }
+        
+        function onProductUpdated(product) {
+            searchProducts()
+        }
+        
+        function onProductRemoved(productId) {
+            searchProducts()
+        }
+        
+        function onCountChanged() {
+            searchProducts()
+        }
+    }
+    
+    Connections {
+        target: CurrencyService
+        
+        function onExchangeRateChanged() {
+            // Update price displays when exchange rate changes
+            searchProducts()
+        }
+    }
+    
+    // Connect search and category filters
+    Component.onCompleted: {
+        searchField.textChanged.connect(searchProducts)
+        categoryCombo.currentIndexChanged.connect(filterByCategory)
+        searchProducts()
     }
 }

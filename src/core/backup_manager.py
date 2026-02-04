@@ -4,13 +4,20 @@ import gzip
 import json
 from pathlib import Path
 from datetime import datetime
-from typing import Optional, List
-from .security import get_security_manager
-from .audit_logger import get_audit_logger
-from .database import get_db
+from typing import Optional, List, Dict
+from dataclasses import dataclass
+
+@dataclass
+class BackupInfo:
+    """Backup metadata"""
+    name: str
+    file_path: str
+    created_at: datetime
+    size: int
+    size_formatted: str
 
 class BackupManager:
-    """Secure encrypted backup management"""
+    """Simple backup management for SQLite database"""
     
     def __init__(self, backup_dir: Optional[str] = None):
         if backup_dir is None:
@@ -18,75 +25,38 @@ class BackupManager:
         
         self.backup_dir = Path(backup_dir)
         self.backup_dir.mkdir(parents=True, exist_ok=True)
-        self._security_manager = get_security_manager()
-        self._audit_logger = get_audit_logger()
-        
-        # Set secure permissions
-        os.chmod(self.backup_dir, 0o700)
     
     def create_backup(self, backup_name: Optional[str] = None) -> str:
-        """Create encrypted backup of database"""
+        """Create compressed backup of database"""
+        from src.core.database import get_db
         
         if backup_name is None:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             backup_name = f"vento_backup_{timestamp}"
         
-        backup_path = self.backup_dir / f"{backup_name}.enc"
+        backup_path = self.backup_dir / f"{backup_name}.gz"
         
         try:
-            # Get database path
             db_path = get_db().db_path
             
-            # Create temporary backup file
-            temp_backup = self.backup_dir / f"temp_{backup_name}.db"
+            # Compress database directly
+            with open(db_path, 'rb') as f_in:
+                with gzip.open(backup_path, 'wb') as f_out:
+                    shutil.copyfileobj(f_in, f_out)
             
-            # Copy database file
-            shutil.copy2(db_path, temp_backup)
-            
-            # Compress and encrypt
-            encrypted_data = self._compress_and_encrypt(temp_backup)
-            
-            # Write encrypted backup
-            with open(backup_path, 'wb') as f:
-                f.write(encrypted_data)
-            
-            # Remove temporary file
-            temp_backup.unlink()
-            
-            # Create backup metadata
-            self._create_backup_metadata(backup_name, backup_path)
-            
-            # Log backup creation
-            self._audit_logger.log_event(
-                event_type=self._audit_logger.AuditEventType.DATA_CREATE,
-                resource="backup",
-                action="create",
-                details={
-                    "backup_name": backup_name,
-                    "backup_path": str(backup_path),
-                    "original_db_size": os.path.getsize(db_path),
-                    "backup_size": os.path.getsize(backup_path)
-                }
-            )
+            # Create metadata
+            self._create_metadata(backup_name, backup_path)
             
             return str(backup_path)
             
         except Exception as e:
-            # Clean up on failure
-            if temp_backup.exists():
-                temp_backup.unlink()
             if backup_path.exists():
                 backup_path.unlink()
-            
-            self._audit_logger.log_security_event(
-                event_type="backup_failure",
-                description=f"Backup creation failed: {str(e)}",
-                severity="high"
-            )
-            raise
+            raise Exception(f"Error creating backup: {str(e)}")
     
     def restore_backup(self, backup_path: str) -> bool:
-        """Restore database from encrypted backup"""
+        """Restore database from compressed backup"""
+        from src.core.database import get_db
         
         backup_file = Path(backup_path)
         
@@ -94,221 +64,167 @@ class BackupManager:
             raise FileNotFoundError(f"Backup file not found: {backup_path}")
         
         try:
-            # Decrypt and decompress
-            temp_restore = self.backup_dir / f"temp_restore_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
-            
-            self._decrypt_and_decompress(backup_file, temp_restore)
-            
-            # Verify backup integrity
-            if not self._verify_backup_integrity(temp_restore):
-                raise ValueError("Backup integrity check failed")
-            
-            # Get current database path
             db_path = get_db().db_path
             
-            # Create backup of current database before restore
-            current_backup = self.backup_dir / f"pre_restore_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
-            shutil.copy2(db_path, current_backup)
+            # Create safety backup of current database
+            safety_backup = self.backup_dir / f"pre_restore_{datetime.now().strftime('%Y%m%d_%H%M%S')}.gz"
+            with open(db_path, 'rb') as f_in:
+                with gzip.open(safety_backup, 'wb') as f_out:
+                    shutil.copyfileobj(f_in, f_out)
             
-            # Replace database
-            shutil.copy2(temp_restore, db_path)
-            
-            # Clean up temporary files
-            temp_restore.unlink()
-            
-            # Log restore operation
-            self._audit_logger.log_event(
-                event_type=self._audit_logger.AuditEventType.DATA_UPDATE,
-                resource="database",
-                action="restore",
-                details={
-                    "backup_path": backup_path,
-                    "current_backup": str(current_backup)
-                }
-            )
+            # Decompress and restore
+            with gzip.open(backup_file, 'rb') as f_in:
+                with open(db_path, 'wb') as f_out:
+                    shutil.copyfileobj(f_in, f_out)
             
             return True
             
         except Exception as e:
-            # Clean up on failure
-            if temp_restore.exists():
-                temp_restore.unlink()
-            
-            self._audit_logger.log_security_event(
-                event_type="restore_failure",
-                description=f"Database restore failed: {str(e)}",
-                severity="high"
-            )
-            raise
+            raise Exception(f"Error restoring backup: {str(e)}")
     
-    def list_backups(self) -> List[dict]:
-        """List available backups with metadata"""
-        
+    def list_backups(self) -> List[BackupInfo]:
+        """List all available backups"""
         backups = []
         
-        for backup_file in self.backup_dir.glob("*.enc"):
+        for backup_file in self.backup_dir.glob("*.gz"):
             try:
-                metadata_file = backup_file.with_suffix('.meta')
+                stat = backup_file.stat()
+                created_at = datetime.fromtimestamp(stat.st_ctime)
+                size = stat.st_size
                 
-                if metadata_file.exists():
-                    with open(metadata_file, 'r') as f:
-                        metadata = json.load(f)
-                else:
-                    metadata = {
-                        "name": backup_file.stem,
-                        "created_at": datetime.fromtimestamp(backup_file.stat().st_ctime).isoformat(),
-                        "size": backup_file.stat().st_size
-                    }
-                
-                backups.append({
-                    "file": str(backup_file),
-                    "metadata": metadata
-                })
-                
+                backups.append(BackupInfo(
+                    name=backup_file.stem,
+                    file_path=str(backup_file),
+                    created_at=created_at,
+                    size=size,
+                    size_formatted=self._format_size(size)
+                ))
             except Exception:
                 continue
         
-        return sorted(backups, key=lambda x: x["metadata"]["created_at"], reverse=True)
+        return sorted(backups, key=lambda x: x.created_at, reverse=True)
     
     def delete_backup(self, backup_path: str) -> bool:
-        """Delete backup file and metadata"""
-        
-        backup_file = Path(backup_path)
-        metadata_file = backup_file.with_suffix('.meta')
-        
+        """Delete backup file and its metadata"""
         try:
+            backup_file = Path(backup_path)
+            metadata_file = backup_file.with_suffix('.json')
+            
             if backup_file.exists():
                 backup_file.unlink()
             
             if metadata_file.exists():
                 metadata_file.unlink()
             
-            # Log deletion
-            self._audit_logger.log_event(
-                event_type=self._audit_logger.AuditEventType.DATA_DELETE,
-                resource="backup",
-                action="delete",
-                details={"backup_path": backup_path}
-            )
+            return True
+        except Exception:
+            return False
+    
+    def export_to_json(self, export_path: str) -> str:
+        """Export all data to JSON format"""
+        from src.core.database import get_db
+        import sqlite3
+        
+        try:
+            with get_db().get_connection() as conn:
+                data = {}
+                cursor = conn.cursor()
+                
+                # Get all tables
+                cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+                tables = cursor.fetchall()
+                
+                for table in tables:
+                    table_name = table[0]
+                    cursor.execute(f"SELECT * FROM {table_name}")
+                    rows = cursor.fetchall()
+                    columns = [description[0] for description in cursor.description]
+                    
+                    data[table_name] = {
+                        'columns': columns,
+                        'rows': [dict(zip(columns, row)) for row in rows]
+                    }
+                
+                # Write JSON export
+                export_file = Path(export_path)
+                with open(export_file, 'w', encoding='utf-8') as f:
+                    json.dump(data, f, indent=2, default=str)
+                
+                return str(export_file)
+                
+        except Exception as e:
+            raise Exception(f"Error exporting data: {str(e)}")
+    
+    def import_from_json(self, import_path: str) -> bool:
+        """Import data from JSON file"""
+        from src.core.database import get_db
+        import sqlite3
+        
+        try:
+            with open(import_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            
+            with get_db().get_connection() as conn:
+                cursor = conn.cursor()
+                
+                for table_name, table_data in data.items():
+                    if table_name == 'sqlite_sequence':
+                        continue
+                    
+                    # Clear existing data
+                    cursor.execute(f"DELETE FROM {table_name}")
+                    
+                    # Insert new data
+                    if table_data['rows']:
+                        columns = table_data['columns']
+                        placeholders = ', '.join(['?' for _ in columns])
+                        insert_sql = f"INSERT INTO {table_name} ({', '.join(columns)}) VALUES ({placeholders})"
+                        
+                        for row in table_data['rows']:
+                            values = [row.get(col) for col in columns]
+                            cursor.execute(insert_sql, values)
+                
+                conn.commit()
             
             return True
             
         except Exception as e:
-            self._audit_logger.log_security_event(
-                event_type="backup_deletion_failure",
-                description=f"Failed to delete backup: {str(e)}",
-                severity="medium"
-            )
-            return False
+            raise Exception(f"Error importing data: {str(e)}")
     
-    def _compress_and_encrypt(self, file_path: Path) -> bytes:
-        """Compress and encrypt a file"""
-        
-        # Read and compress
-        with open(file_path, 'rb') as f:
-            data = f.read()
-        
-        compressed_data = gzip.compress(data)
-        
-        # Encrypt
-        return self._security_manager.encrypt_data(compressed_data.decode('latin-1'))
-    
-    def _decrypt_and_decompress(self, encrypted_file: Path, output_path: Path):
-        """Decrypt and decompress a file"""
-        
-        # Read encrypted data
-        with open(encrypted_file, 'rb') as f:
-            encrypted_data = f.read()
-        
-        # Decrypt
-        decrypted_data = self._security_manager.decrypt_data(encrypted_data)
-        
-        # Decompress
-        decompressed_data = gzip.decrypt(decrypted_data.encode('latin-1'))
-        
-        # Write output
-        with open(output_path, 'wb') as f:
-            f.write(decompressed_data)
-    
-    def _verify_backup_integrity(self, backup_path: Path) -> bool:
-        """Verify backup database integrity"""
-        
-        try:
-            # Try to open database and run integrity check
-            import sqlite3
-            conn = sqlite3.connect(str(backup_path))
-            cursor = conn.cursor()
-            
-            # Check if tables exist
-            cursor.execute("""
-                SELECT name FROM sqlite_master 
-                WHERE type='table' AND name IN ('products', 'sales', 'exchange_rates')
-            """)
-            
-            tables = cursor.fetchall()
-            if len(tables) < 3:
-                return False
-            
-            # Run integrity check
-            cursor.execute("PRAGMA integrity_check")
-            result = cursor.fetchone()
-            
-            conn.close()
-            
-            return result[0] == "ok"
-            
-        except Exception:
-            return False
-    
-    def _create_backup_metadata(self, backup_name: str, backup_path: Path):
-        """Create backup metadata file"""
-        
+    def _create_metadata(self, backup_name: str, backup_path: Path):
+        """Create backup metadata"""
         metadata = {
             "name": backup_name,
             "created_at": datetime.now().isoformat(),
             "size": backup_path.stat().st_size,
-            "version": "1.0",
-            "database_path": str(get_db().db_path),
-            "checksum": self._calculate_checksum(backup_path)
+            "version": "1.0"
         }
         
-        metadata_file = backup_path.with_suffix('.meta')
+        metadata_file = backup_path.with_suffix('.json')
         with open(metadata_file, 'w') as f:
             json.dump(metadata, f, indent=2)
-        
-        # Secure permissions
-        os.chmod(metadata_file, 0o600)
     
-    def _calculate_checksum(self, file_path: Path) -> str:
-        """Calculate file checksum for integrity verification"""
-        
-        import hashlib
-        
-        hash_sha256 = hashlib.sha256()
-        
-        with open(file_path, 'rb') as f:
-            for chunk in iter(lambda: f.read(4096), b""):
-                hash_sha256.update(chunk)
-        
-        return hash_sha256.hexdigest()
+    def _format_size(self, size_bytes: int) -> str:
+        """Format file size for display"""
+        for unit in ['B', 'KB', 'MB', 'GB']:
+            if size_bytes < 1024:
+                return f"{size_bytes:.1f} {unit}"
+            size_bytes /= 1024
+        return f"{size_bytes:.1f} TB"
     
     def cleanup_old_backups(self, keep_count: int = 10) -> int:
         """Remove old backups, keeping only the most recent ones"""
-        
         backups = self.list_backups()
         
         if len(backups) <= keep_count:
             return 0
         
-        # Remove oldest backups
-        backups_to_delete = backups[keep_count:]
-        deleted_count = 0
+        deleted = 0
+        for backup in backups[keep_count:]:
+            if self.delete_backup(backup.file_path):
+                deleted += 1
         
-        for backup in backups_to_delete:
-            if self.delete_backup(backup["file"]):
-                deleted_count += 1
-        
-        return deleted_count
+        return deleted
 
 # Global backup manager instance
 _backup_manager = None

@@ -1,5 +1,6 @@
 from src.features.exchange_rate.models import ExchangeRate
 from src.features.exchange_rate.repository import ExchangeRateRepository
+from src.core.validators import InputValidator, ValidationError
 
 class ExchangeRateService:
     """Service for Exchange Rate business logic"""
@@ -11,9 +12,14 @@ class ExchangeRateService:
         return self._repository.get_current()
     
     def update_rate(self, usd_to_cup: float) -> ExchangeRate:
-        if usd_to_cup <= 0:
-            raise ValueError("La tasa de cambio debe ser mayor que cero")
-        rate = ExchangeRate(usd_to_cup=usd_to_cup)
+        try:
+            validated_rate = InputValidator.validate_price(usd_to_cup, "tasa de cambio")
+            if float(validated_rate) <= 0:
+                raise ValidationError("La tasa de cambio debe ser mayor que cero")
+        except ValidationError as e:
+            raise ValueError(str(e))
+        
+        rate = ExchangeRate(usd_to_cup=float(validated_rate))
         return self._repository.update(rate)
     
     def convert(self, amount: float, from_currency: str, to_currency: str) -> float:

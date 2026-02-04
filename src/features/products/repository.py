@@ -1,26 +1,50 @@
 from typing import List, Optional
 from src.core.database import get_db
 from src.core.interfaces import Repository
+from src.core.audit_logger import get_audit_logger
 from src.features.products.models import Product, Currency
 
 class ProductRepository(Repository[Product]):
     """Repository for Product entity"""
     
+    def __init__(self):
+        self._audit_logger = get_audit_logger()
+    
     def create(self, product: Product) -> Product:
-        with get_db().get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute('''
-                INSERT INTO products (name, description, cost_price, cost_currency, 
-                                    margin_percent, sale_price, sale_currency)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                product.name, product.description, product.cost_price,
-                product.cost_currency.value, product.margin_percent,
-                product.sale_price, 
-                product.sale_currency.value if product.sale_currency else None
-            ))
-            product.id = cursor.lastrowid
-            return product
+        try:
+            with get_db().get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    INSERT INTO products (name, description, cost_price, cost_currency, 
+                                        margin_percent, sale_price, sale_currency)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    product.name, product.description, product.cost_price,
+                    product.cost_currency.value, product.margin_percent,
+                    product.sale_price, 
+                    product.sale_currency.value if product.sale_currency else None
+                ))
+                product.id = cursor.lastrowid
+                
+                # Log audit event
+                self._audit_logger.log_data_operation(
+                    operation="CREATE",
+                    table="products",
+                    record_id=product.id,
+                    new_values={
+                        "name": product.name,
+                        "cost_price": str(product.cost_price)
+                    }
+                )
+                
+                return product
+        except Exception as e:
+            self._audit_logger.log_data_operation(
+                operation="CREATE",
+                table="products",
+                success=False
+            )
+            raise
     
     def get_by_id(self, id: int) -> Optional[Product]:
         with get_db().get_connection() as conn:

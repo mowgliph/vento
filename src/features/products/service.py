@@ -1,5 +1,6 @@
 from typing import List, Optional
 from src.core.interfaces import Service
+from src.core.validators import InputValidator, ValidationError
 from src.features.products.models import Product
 from src.features.products.repository import ProductRepository
 
@@ -10,10 +11,23 @@ class ProductService(Service[Product]):
         self._repository = repository or ProductRepository()
     
     def create(self, product: Product) -> Product:
-        if not product.name:
-            raise ValueError("El nombre del producto es requerido")
-        if product.cost_price < 0:
-            raise ValueError("El precio de costo no puede ser negativo")
+        # Validate all input fields
+        try:
+            product.name = InputValidator.validate_product_name(product.name)
+            product.description = InputValidator.validate_description(product.description)
+            product.cost_price = float(InputValidator.validate_price(product.cost_price, "precio de costo"))
+            product.cost_currency = InputValidator.validate_currency(product.cost_currency.value)
+            product.margin_percent = float(InputValidator.validate_margin_percent(product.margin_percent))
+            
+            if product.sale_price is not None:
+                product.sale_price = float(InputValidator.validate_price(product.sale_price, "precio de venta"))
+            
+            if product.sale_currency is not None:
+                product.sale_currency = InputValidator.validate_currency(product.sale_currency.value)
+                
+        except ValidationError as e:
+            raise ValueError(str(e))
+        
         return self._repository.create(product)
     
     def get_by_id(self, id: int) -> Optional[Product]:
@@ -23,14 +37,35 @@ class ProductService(Service[Product]):
         return self._repository.get_all()
     
     def update(self, product: Product) -> Product:
-        if not product.id:
-            raise ValueError("El ID del producto es requerido para actualizar")
+        # Validate ID
+        try:
+            product.id = InputValidator.validate_id(product.id)
+            # Validate all other fields
+            product.name = InputValidator.validate_product_name(product.name)
+            product.description = InputValidator.validate_description(product.description)
+            product.cost_price = float(InputValidator.validate_price(product.cost_price, "precio de costo"))
+            product.cost_currency = InputValidator.validate_currency(product.cost_currency.value)
+            product.margin_percent = float(InputValidator.validate_margin_percent(product.margin_percent))
+            
+            if product.sale_price is not None:
+                product.sale_price = float(InputValidator.validate_price(product.sale_price, "precio de venta"))
+            
+            if product.sale_currency is not None:
+                product.sale_currency = InputValidator.validate_currency(product.sale_currency.value)
+                
+        except ValidationError as e:
+            raise ValueError(str(e))
+        
         return self._repository.update(product)
     
     def delete(self, id: int) -> bool:
         return self._repository.delete(id)
     
     def search(self, query: str) -> List[Product]:
-        if not query:
-            return self.get_all()
-        return self._repository.search(query)
+        try:
+            validated_query = InputValidator.validate_search_query(query)
+            if not validated_query:
+                return self.get_all()
+            return self._repository.search(validated_query)
+        except ValidationError as e:
+            raise ValueError(str(e))

@@ -1,60 +1,114 @@
-# 🛒 Vento
+# Vento - Sistema de Gestión de Tienda
 
-Sistema de gestión de inventario y ventas con soporte para múltiples monedas.
+Vento es una aplicación de escritorio para la gestión de productos y ventas, diseñada para simplificar las operaciones diarias de pequeñas y medianas tiendas.
 
-## 🏗️ Arquitectura
+## Características
 
-Este proyecto utiliza **Feature-Based Architecture** (Arquitectura por Características),
-organizando el código por dominio de negocio en lugar de capas técnicas.
+- Gestión de productos
+- Control de ventas
+- Interfaz de usuario intuitiva
+- Sistema de inventario integrado
 
-```
-src/
-├── core/           # Utilidades compartidas (DB, Logger, EventBus)
-├── features/       # Dominios de negocio
-│   ├── currency/   # Gestión de tipo de cambio
-│   ├── inventory/  # Gestión de productos
-│   ├── sales/      # Registro de ventas
-│   └── reporting/  # Generación de reportes
-└── ui/             # Interfaz de usuario (QML)
-```
+## Requisitos del Sistema
 
-## 🔧 Requisitos
+- Python 3.8 o superior
+- Sistema operativo: Windows, macOS o Linux
 
-- C++20 compatible compiler (GCC 10+, Clang 10+, MSVC 2019+)
-- Qt 6.5+
-- CMake 3.21+
+## Instalación
 
-## 🚀 Compilación
-
-### Windows
-
-1. **Instalar requisitos:**
-   - Descarga e instala [Qt 6.5+](https://www.qt.io/download)
-   - Instala [Visual Studio 2019+](https://visualstudio.microsoft.com/) (con el componente "Desktop development with C++")
-   - Asegúrate de tener CMake 3.21+
-
-2. **Configurar variables de entorno:**
-   ```powershell
-   # Añade Qt al PATH (ajusta la ruta según tu instalación)
-   $env:PATH += ";C:\Qt\6.5.0\msvc2019_64\bin"
-   ```
-
-3. **Compilar:**
-   ```powershell
-   mkdir build
-   cd build
-   cmake -G "Visual Studio 17 2022" ..
-   cmake --build . --config Release
-   ```
-
-### Linux/macOS
+### 1. Clonar el repositorio
 
 ```bash
-mkdir build && cd build
-cmake ..
-cmake --build .
+git clone https://github.com/mowgliph/vento.git
+cd vento
 ```
 
-## 📋 Licencia
+### 2. Crear entorno virtual (recomendado)
 
-MIT License
+```bash
+# En Windows
+python -m venv venv
+venv\Scripts\activate
+
+# En macOS/Linux
+python3 -m venv venv
+source venv/bin/activate
+```
+
+### 3. Instalar dependencias
+
+```bash
+pip install -r requirements.txt
+```
+
+## Compilación
+
+Vento es una aplicación Python que no requiere compilación tradicional. Sin embargo, puedes crear un ejecutable usando PyInstaller si lo deseas:
+
+### Opcional: Crear ejecutable
+
+```bash
+# Instalar PyInstaller
+pip install pyinstaller
+
+# Crear ejecutable
+pyinstaller --onefile --windowed main.py
+```
+
+El ejecutable se generará en la carpeta `dist/`.
+
+## Ejecución
+
+### Método 1: Ejecutar desde código fuente
+
+```bash
+python main.py
+```
+
+### Método 2: Usar el ejecutable (si fue creado)
+
+```bash
+# En Windows
+dist/main.exe
+
+# En macOS/Linux
+./dist/main
+```
+
+## Estructura del Proyecto
+
+```
+vento/
+├── main.py              # Punto de entrada principal
+├── requirements.txt     # Dependencias del proyecto
+├── src/                 # Código fuente
+│   ├── core/           # Lógica central de la aplicación
+│   ├── features/       # Módulos de funcionalidades
+│   └── ui/             # Interfaz de usuario
+├── docs/               # Documentación
+└── README.md           # Este archivo
+```
+
+## Dependencias
+
+- **customtkinter** (>=5.2.2) - Biblioteca para interfaz gráfica moderna
+
+## Contribución
+
+1. Fork del repositorio
+2. Crear una rama para tu feature (`git checkout -b feature/nueva-funcionalidad`)
+3. Commit tus cambios (`git commit -am 'Añadir nueva funcionalidad'`)
+4. Push a la rama (`git push origin feature/nueva-funcionalidad`)
+5. Crear un Pull Request
+
+## Licencia
+
+Este proyecto está licenciado bajo la Licencia MIT. Ver el archivo [LICENSE](LICENSE) para más detalles.
+
+## Soporte
+
+Si encuentras algún problema o tienes sugerencias, por favor abre un issue en el repositorio de GitHub.
+
+## Créditos
+
+Desarrollado por [mowgliph](https://github.com/mowgliph)

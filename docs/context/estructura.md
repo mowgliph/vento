@@ -1,51 +1,32 @@
-## 📁 Estructura Visual del Proyecto
+## Estructura del proyecto:
 
-```
-Vento/
-├── 📄 CMakeLists.txt                    # CMake principal
-├── 📄 README.md
-├── 📁 src/
-│   ├── 📄 CMakeLists.txt
-│   ├── 📄 main.cpp                      # Entry point
-│   │
-│   ├── 📁 core/                         # Shared/Core utilities
-│   │   ├── 📄 CMakeLists.txt
-│   │   ├── 📁 database/
-│   │   │   ├── 📄 DatabaseManager.hpp
-│   │   │   └── 📄 DatabaseManager.cpp
-│   │   ├── 📁 logger/
-│   │   │   ├── 📄 Logger.hpp
-│   │   │   └── 📄 Logger.cpp
-│   │   └── 📁 utils/
-│   │       └── 📄 EventBus.hpp          # Observer Pattern
-│   │
-│   ├── 📁 features/
-│   │   ├── 📄 CMakeLists.txt
-│   │   │
-│   │   ├── 📁 currency/                 # Feature: Tipo de cambio
-│   │   │   ├── 📄 CMakeLists.txt
-│   │   │   ├── 📄 CurrencyService.hpp
-│   │   │   └── 📄 CurrencyService.cpp
-│   │   │
-│   │   ├── 📁 inventory/                # Feature: Inventario
-│   │   │   ├── 📄 CMakeLists.txt
-│   │   │   ├── 📄 InventoryService.hpp
-│   │   │   └── 📄 InventoryService.cpp
-│   │   │
-│   │   └── 📁 sales/                    # Feature: Ventas
-│   │       ├── 📄 CMakeLists.txt
-│   │       ├── 📄 SalesService.hpp
-│   │       └── 📄 SalesService.cpp
-│   │
-│   └── 📁 ui/
-│       ├── 📄 CMakeLists.txt
-│       └── 📁 qml/
-│           ├── 📄 Main.qml
-│           └── 📄 qml.qrc
-│
-├── 📁 resources/
-│   └── 📄 app.qrc
-│
-└── 📁 tests/
-    └── 📄 CMakeLists.txt
-```
+vento/
+├── src/
+│   ├── core/
+│   │   ├── interfaces.py      # Clases abstractas (Repository, Service)
+│   │   ├── database.py        # DatabaseManager singleton
+│   │   └── config.py          # Configuración
+│   ├── features/
+│   │   ├── products/
+│   │   │   ├── models.py      # Entidad Product
+│   │   │   ├── repository.py  # ProductRepository
+│   │   │   ├── service.py     # ProductService
+│   │   │   └── views.py       # UI ProductView
+│   │   ├── sales/
+│   │   │   ├── models.py      # Entidad Sale
+│   │   │   ├── repository.py  # SaleRepository
+│   │   │   ├── service.py     # SaleService
+│   │   │   └── views.py       # UI SaleView
+│   │   ├── exchange_rate/
+│   │   │   ├── models.py      # Entidad ExchangeRate
+│   │   │   ├── repository.py  # ExchangeRateRepository
+│   │   │   ├── service.py     # ExchangeRateService
+│   │   │   └── views.py       # UI ExchangeRateView
+│   │   └── reports/
+│   │       ├── service.py     # ReportService
+│   │       └── views.py       # UI ReportsView
+│   └── ui/
+│       ├── components.py      # Componentes reutilizables
+│       └── main_window.py     # Ventana principal
+├── main.py                    # Punto de entrada
+└── requirements.txt

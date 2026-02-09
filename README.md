@@ -61,21 +61,37 @@ El ejecutable se generará en la carpeta `dist/`.
 
 ## Ejecución
 
-### Método 1: Ejecutar desde código fuente
+### Método 1: Ejecutable Windows (Recomendado)
+
+Descarga el ejecutable directamente desde el [Release v1.0.0](https://github.com/mowgliph/vento/releases/tag/v1.0.0):
+
+1. Ve a la sección de [Releases](https://github.com/mowgliph/vento/releases)
+2. Descarga `Vento.exe` del release v1.0.0
+3. Ejecuta `Vento.exe` directamente
+
+**Ventajas:**
+- No requiere instalación de Python
+- No requiere instalación de dependencias
+- Funciona en cualquier computadora con Windows
+- Portable y fácil de compartir
+
+### Método 2: Ejecutar desde código fuente
 
 ```bash
 python main.py
 ```
 
-### Método 2: Usar el ejecutable (si fue creado)
+### Método 3: Crear tu propio ejecutable
 
 ```bash
-# En Windows
-dist/main.exe
+# Instalar PyInstaller
+pip install pyinstaller
 
-# En macOS/Linux
-./dist/main
+# Crear ejecutable
+pyinstaller --onefile --windowed main.py
 ```
+
+El ejecutable se generará en la carpeta `dist/`.
 
 ## Estructura del Proyecto
 

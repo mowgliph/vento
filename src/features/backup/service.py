@@ -9,6 +9,10 @@ class BackupService(Service[Backup]):
     def __init__(self, repository: BackupRepository = None):
         self._repository = repository or BackupRepository()
     
+    def create(self, entity: Backup) -> Backup:
+        """Create a new backup (implementation of abstract method)"""
+        return self.create_backup(entity.name if entity else None)
+    
     def create_backup(self, backup_name: Optional[str] = None) -> Backup:
         """Create a new backup with validation"""
         if backup_name and not backup_name.strip():

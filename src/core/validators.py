@@ -114,6 +114,15 @@ class InputValidator:
         return currency
     
     @staticmethod
+    def validate_currency_enum(currency_value: str) -> 'Currency':
+        """Validate currency and return Currency enum"""
+        from src.features.products.models import Currency
+        
+        if currency_value not in ['USD', 'CUP']:
+            raise ValidationError("La moneda debe ser USD o CUP")
+        return Currency(currency_value)
+    
+    @staticmethod
     def validate_id(id_value: int) -> int:
         """Validate ID values"""
         if not isinstance(id_value, int):

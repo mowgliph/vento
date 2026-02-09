@@ -1,5 +1,6 @@
 from typing import List, Optional
 from datetime import datetime
+import sqlite3
 from src.core.database import get_db
 from src.core.interfaces import Repository
 from src.features.sales.models import Sale
@@ -84,12 +85,16 @@ class SaleRepository(Repository[Sale]):
             return cursor.rowcount > 0
     
     def _row_to_sale(self, row: sqlite3.Row) -> Sale:
+        sale_date = row['sale_date']
+        # Convert string to datetime if necessary
+        if isinstance(sale_date, str):
+            sale_date = datetime.fromisoformat(sale_date)
         return Sale(
             id=row['id'],
             product_id=row['product_id'],
-            product_name=row.get('product_name', ''),
+            product_name=row['product_name'] if 'product_name' in row.keys() else '',
             sale_price=row['sale_price'],
             sale_currency=row['sale_currency'],
             quantity=row['quantity'],
-            sale_date=row['sale_date']
+            sale_date=sale_date
         )

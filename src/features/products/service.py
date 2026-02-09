@@ -16,14 +16,14 @@ class ProductService(Service[Product]):
             product.name = InputValidator.validate_product_name(product.name)
             product.description = InputValidator.validate_description(product.description)
             product.cost_price = float(InputValidator.validate_price(product.cost_price, "precio de costo"))
-            product.cost_currency = InputValidator.validate_currency(product.cost_currency.value)
+            product.cost_currency = InputValidator.validate_currency_enum(product.cost_currency.value)
             product.margin_percent = float(InputValidator.validate_margin_percent(product.margin_percent))
             
             if product.sale_price is not None:
                 product.sale_price = float(InputValidator.validate_price(product.sale_price, "precio de venta"))
             
             if product.sale_currency is not None:
-                product.sale_currency = InputValidator.validate_currency(product.sale_currency.value)
+                product.sale_currency = InputValidator.validate_currency_enum(product.sale_currency.value)
                 
         except ValidationError as e:
             raise ValueError(str(e))
@@ -44,14 +44,14 @@ class ProductService(Service[Product]):
             product.name = InputValidator.validate_product_name(product.name)
             product.description = InputValidator.validate_description(product.description)
             product.cost_price = float(InputValidator.validate_price(product.cost_price, "precio de costo"))
-            product.cost_currency = InputValidator.validate_currency(product.cost_currency.value)
+            product.cost_currency = InputValidator.validate_currency_enum(product.cost_currency.value)
             product.margin_percent = float(InputValidator.validate_margin_percent(product.margin_percent))
             
             if product.sale_price is not None:
                 product.sale_price = float(InputValidator.validate_price(product.sale_price, "precio de venta"))
             
             if product.sale_currency is not None:
-                product.sale_currency = InputValidator.validate_currency(product.sale_currency.value)
+                product.sale_currency = InputValidator.validate_currency_enum(product.sale_currency.value)
                 
         except ValidationError as e:
             raise ValueError(str(e))

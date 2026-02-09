@@ -145,9 +145,15 @@ class SaleView:
         
         for sale in sales:
             total = sale.sale_price * sale.quantity
+            
+            if isinstance(sale.sale_date, str):
+                date_str = sale.sale_date
+            else:
+                date_str = sale.sale_date.strftime("%d/%m/%Y %H:%M")
+            
             self.tree.insert("", "end", values=(
                 sale.id,
-                sale.sale_date.strftime("%d/%m/%Y %H:%M"),
+                date_str,
                 sale.product_name,
                 sale.quantity,
                 f"${sale.sale_price:.2f} {sale.sale_currency}",

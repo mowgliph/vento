@@ -80,8 +80,26 @@ class ProductRepository(Repository[Product]):
     def delete(self, id: int) -> bool:
         with get_db().get_connection() as conn:
             cursor = conn.cursor()
+            
+            # Count associated sales for audit purposes
+            cursor.execute('SELECT COUNT(*) FROM sales WHERE product_id = ?', (id,))
+            sales_count = cursor.fetchone()[0]
+            
+            # Delete product (cascade will delete associated sales automatically)
             cursor.execute('DELETE FROM products WHERE id = ?', (id,))
-            return cursor.rowcount > 0
+            deleted = cursor.rowcount > 0
+            
+            # Log cascade deletion
+            if deleted and sales_count > 0:
+                self._audit_logger.log_data_operation(
+                    operation="DELETE",
+                    table="products",
+                    record_id=id,
+                    success=True,
+                    metadata={"cascade_sales_deleted": sales_count}
+                )
+            
+            return deleted
     
     def search(self, query: str) -> List[Product]:
         with get_db().get_connection() as conn:

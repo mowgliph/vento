@@ -109,7 +109,7 @@ class DatabaseManager:
                     sale_currency TEXT NOT NULL CHECK(sale_currency IN ('USD', 'CUP')),
                     quantity INTEGER DEFAULT 1,
                     sale_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (product_id) REFERENCES products(id)
+                    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
                 )
             ''')
             

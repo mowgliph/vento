@@ -95,12 +95,13 @@ class BackupView:
         log_frame = ctk.CTkFrame(right_frame)
         log_frame.pack(fill="both", expand=True, padx=10, pady=10)
         log_frame.grid_rowconfigure(0, weight=1)
-        
+        log_frame.grid_columnconfigure(0, weight=1)
+
         ctk.CTkLabel(log_frame, text="Registro de Actividad", 
-                    font=("Roboto", 14, "bold")).pack(pady=5)
-        
+                    font=("Roboto", 14, "bold")).grid(row=0, column=0, sticky="ew", pady=5)
+
         self.log_text = ctk.CTkTextbox(log_frame, height=200)
-        self.log_text.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
+        self.log_text.grid(row=1, column=0, sticky="nsew", padx=5, pady=5)
         
         self._log("Sistema de backups inicializado")
     

@@ -4,10 +4,12 @@ from src.features.products.views import ProductView
 from src.features.sales.views import SaleView
 from src.features.exchange_rate.views import ExchangeRateView
 from src.features.reports.views import ReportsView
+from src.features.backup.views import BackupView
 from src.features.products.service import ProductService
 from src.features.sales.service import SaleService
 from src.features.exchange_rate.service import ExchangeRateService
 from src.features.reports.service import ReportService
+from src.features.backup.service import BackupService
 
 class MainWindow:
     """Main application window with navigation"""
@@ -25,6 +27,7 @@ class MainWindow:
         self.sale_service = SaleService()
         self.exchange_service = ExchangeRateService()
         self.report_service = ReportService()
+        self.backup_service = BackupService()
         
         self._build_ui()
     
@@ -46,6 +49,7 @@ class MainWindow:
             ("Ventas", self._show_sales, "success"),
             ("Tasa de Cambio", self._show_exchange, "info"),
             ("Reportes", self._show_reports, "warning"),
+            ("Backups", self._show_backups, "danger"),
         ]
         
         for text, command, color in nav_buttons:
@@ -68,12 +72,17 @@ class MainWindow:
         # Show products by default
         self._show_products()
     
+    def _show_backups(self):
+        self._clear_content()
+        BackupView(self.content_frame, self.backup_service)
+    
     def _get_color(self, name: str) -> str:
         colors = {
             "primary": "#3B82F6",
             "success": "#10B981",
             "info": "#06B6D4",
-            "warning": "#F59E0B"
+            "warning": "#F59E0B",
+            "danger": "#EF4444"
         }
         return colors.get(name, colors["primary"])
     

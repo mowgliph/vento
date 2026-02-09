@@ -8,6 +8,8 @@ Vento es una aplicación de escritorio para la gestión de productos y ventas, d
 - Control de ventas
 - Interfaz de usuario intuitiva
 - Sistema de inventario integrado
+- **Eliminación en cascada**: Al eliminar un producto, se eliminan automáticamente todas las ventas asociadas
+- **Auditoría de operaciones**: Registro completo de todas las operaciones de datos
 
 ## Requisitos del Sistema
 
@@ -59,21 +61,37 @@ El ejecutable se generará en la carpeta `dist/`.
 
 ## Ejecución
 
-### Método 1: Ejecutar desde código fuente
+### Método 1: Ejecutable Windows (Recomendado)
+
+Descarga el ejecutable directamente desde el [Release v1.0.0](https://github.com/mowgliph/vento/releases/tag/v1.0.0):
+
+1. Ve a la sección de [Releases](https://github.com/mowgliph/vento/releases)
+2. Descarga `Vento.exe` del release v1.0.0
+3. Ejecuta `Vento.exe` directamente
+
+**Ventajas:**
+- No requiere instalación de Python
+- No requiere instalación de dependencias
+- Funciona en cualquier computadora con Windows
+- Portable y fácil de compartir
+
+### Método 2: Ejecutar desde código fuente
 
 ```bash
 python main.py
 ```
 
-### Método 2: Usar el ejecutable (si fue creado)
+### Método 3: Crear tu propio ejecutable
 
 ```bash
-# En Windows
-dist/main.exe
+# Instalar PyInstaller
+pip install pyinstaller
 
-# En macOS/Linux
-./dist/main
+# Crear ejecutable
+pyinstaller --onefile --windowed main.py
 ```
+
+El ejecutable se generará en la carpeta `dist/`.
 
 ## Estructura del Proyecto
 
@@ -108,6 +126,48 @@ Este proyecto está licenciado bajo la Licencia MIT. Ver el archivo [LICENSE](LI
 ## Soporte
 
 Si encuentras algún problema o tienes sugerencias, por favor abre un issue en el repositorio de GitHub.
+
+## Eliminación en Cascada
+
+El sistema implementa eliminación en cascada para mantener la integridad referencial de los datos:
+
+### Comportamiento
+
+- Al eliminar un producto, se eliminan automáticamente todas las ventas asociadas
+- El sistema muestra una advertencia cuando el producto tiene ventas asociadas
+- Se muestra un mensaje de confirmación detallando cuántas ventas se eliminarán
+- La operación se registra en el log de auditoría
+
+### Ejemplo de Flujo
+
+1. Usuario selecciona un producto con 5 ventas asociadas
+2. Sistema muestra: "¿Eliminar el producto 'Nombre Producto'? ⚠️ Este producto tiene 5 venta(s) asociada(s) que también se eliminarán."
+3. Usuario confirma la eliminación
+4. Sistema elimina el producto y las 5 ventas
+5. Sistema muestra: "Producto eliminado junto con 5 venta(s) asociada(s)"
+6. Operación registrada en auditoría
+
+### Ventajas
+
+- **Integridad de datos**: No quedan registros huérfanos
+- **Experiencia de usuario**: Mensajes claros sobre el impacto de la eliminación
+- **Auditoría completa**: Registro de todas las operaciones de eliminación
+- **Prevención de errores**: Confirmación explícita antes de eliminar datos
+
+## Tests
+
+El proyecto incluye tests unitarios para validar la funcionalidad de eliminación en cascada:
+
+```bash
+# Ejecutar tests
+python -m pytest tests/test_cascade_delete.py -v
+```
+
+Los tests cubren:
+- Eliminación de productos sin ventas
+- Eliminación de productos con ventas (valida cascade)
+- Eliminación de múltiples productos con ventas
+- Eliminación con muchas ventas (performance)
 
 ## Créditos
 

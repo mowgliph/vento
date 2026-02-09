@@ -254,15 +254,35 @@ class ProductView:
             show_error("Seleccione un producto para eliminar")
             return
         
-        if show_confirm(f"¿Eliminar el producto '{self.selected_product.name}'?"):
+        # Count associated sales
+        from src.core.database import get_db
+        with get_db().get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT COUNT(*) FROM sales WHERE product_id = ?', (self.selected_product.id,))
+            sales_count = cursor.fetchone()[0]
+        
+        # Build confirmation message
+        if sales_count > 0:
+            confirm_msg = f"¿Eliminar el producto '{self.selected_product.name}'?\n\n⚠️ Este producto tiene {sales_count} venta(s) asociada(s) que también se eliminarán."
+        else:
+            confirm_msg = f"¿Eliminar el producto '{self.selected_product.name}'?"
+        
+        if show_confirm(confirm_msg):
             try:
-                self.service.delete(self.selected_product.id)
-                self._load_products()
-                self._clear_form()
-                show_info("Producto eliminado")
-                
-                if self.on_product_changed:
-                    self.on_product_changed()
+                deleted = self.service.delete(self.selected_product.id)
+                if deleted:
+                    self._load_products()
+                    self._clear_form()
+                    
+                    if sales_count > 0:
+                        show_info(f"Producto eliminado junto con {sales_count} venta(s) asociada(s)")
+                    else:
+                        show_info("Producto eliminado")
+                    
+                    if self.on_product_changed:
+                        self.on_product_changed()
+                else:
+                    show_error("No se pudo eliminar el producto")
                     
             except Exception as e:
                 show_error(f"Error al eliminar: {str(e)}")

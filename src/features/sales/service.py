@@ -1,6 +1,7 @@
 from typing import List
 from datetime import datetime
 from src.core.interfaces import Service
+from src.core.validators import InputValidator, ValidationError
 from src.features.sales.models import Sale
 from src.features.sales.repository import SaleRepository
 
@@ -11,12 +12,16 @@ class SaleService(Service[Sale]):
         self._repository = repository or SaleRepository()
     
     def create(self, sale: Sale) -> Sale:
-        if sale.product_id <= 0:
-            raise ValueError("El producto es requerido")
-        if sale.sale_price < 0:
-            raise ValueError("El precio de venta no puede ser negativo")
-        if sale.quantity <= 0:
-            raise ValueError("La cantidad debe ser mayor que cero")
+        # Validate all input fields
+        try:
+            sale.product_id = InputValidator.validate_id(sale.product_id)
+            sale.sale_price = float(InputValidator.validate_price(sale.sale_price, "precio de venta"))
+            sale.sale_currency = InputValidator.validate_currency(sale.sale_currency)
+            sale.quantity = InputValidator.validate_quantity(sale.quantity)
+            
+        except ValidationError as e:
+            raise ValueError(str(e))
+        
         return self._repository.create(sale)
     
     def get_by_id(self, id: int) -> Sale:
@@ -26,8 +31,17 @@ class SaleService(Service[Sale]):
         return self._repository.get_all()
     
     def update(self, sale: Sale) -> Sale:
-        if not sale.id:
-            raise ValueError("El ID de la venta es requerido para actualizar")
+        # Validate all input fields
+        try:
+            sale.id = InputValidator.validate_id(sale.id)
+            sale.product_id = InputValidator.validate_id(sale.product_id)
+            sale.sale_price = float(InputValidator.validate_price(sale.sale_price, "precio de venta"))
+            sale.sale_currency = InputValidator.validate_currency(sale.sale_currency)
+            sale.quantity = InputValidator.validate_quantity(sale.quantity)
+            
+        except ValidationError as e:
+            raise ValueError(str(e))
+        
         return self._repository.update(sale)
     
     def delete(self, id: int) -> bool:

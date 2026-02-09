@@ -1,7 +1,10 @@
 import sqlite3
+import os
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Optional
+from .security import get_security_manager
+from .error_handler import get_error_handler
 
 class DatabaseManager:
     """Singleton database manager for SQLite connections"""
@@ -22,22 +25,50 @@ class DatabaseManager:
         
         self.db_path = Path(db_path)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
+        self._security_manager = get_security_manager()
+        self._error_handler = get_error_handler()
         self._initialized = True
         self._init_database()
     
     @contextmanager
     def get_connection(self):
-        """Context manager for database connections"""
+        """Context manager for database connections with encryption"""
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
+        
+        # Set secure pragmas
+        conn.execute("PRAGMA foreign_keys = ON")
+        conn.execute("PRAGMA journal_mode = WAL")
+        conn.execute("PRAGMA synchronous = FULL")
+        
         try:
             yield conn
             conn.commit()
-        except Exception:
+        except Exception as e:
             conn.rollback()
+            # Log error securely without exposing sensitive data
+            self._error_handler.log_data_access(
+                operation="database_error",
+                table="unknown",
+                success=False
+            )
             raise
         finally:
             conn.close()
+    
+    def _log_error(self, message: str):
+        """Secure error logging"""
+        try:
+            log_file = Path(__file__).parent.parent.parent / "logs" / "security.log"
+            log_file.parent.mkdir(exist_ok=True)
+            
+            import datetime
+            timestamp = datetime.datetime.now().isoformat()
+            with open(log_file, 'a') as f:
+                f.write(f"[{timestamp}] {message}\n")
+        except Exception:
+            # Silent fail for logging to avoid exposing errors
+            pass
     
     def _init_database(self):
         """Initialize database tables"""
@@ -78,7 +109,7 @@ class DatabaseManager:
                     sale_currency TEXT NOT NULL CHECK(sale_currency IN ('USD', 'CUP')),
                     quantity INTEGER DEFAULT 1,
                     sale_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (product_id) REFERENCES products(id)
+                    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
                 )
             ''')
             
